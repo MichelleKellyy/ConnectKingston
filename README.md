@@ -1,3 +1,6 @@
+#ConnectKingston
+An AI-powered matching platform that helps Kingston residents discover meaningful volunteer opportunities tailored to their interests and skills.
+
 ## Repository Structure
 ```text
 backend/

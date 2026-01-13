@@ -9,20 +9,21 @@ import Feed from './pages/Feed.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 
 import { auth } from "./firebase/firebase";
+import ProtectedRoute from './components/ProtectedRoute.jsx';
+import GuestRoute from './components/GuestRoute.jsx';
 
 function App() {
-  const LoggedIn = localStorage.getItem("loggedIn") === "true";
-
   return (
+
     <>
       <Routes>
-        <Route path="/" element={LoggedIn ? <Navigate to="/feed" replace /> : <Home />} />
+        <Route path="/" element={<GuestRoute> <Home/> </GuestRoute>} />
         
-        <Route path="/signup" element={LoggedIn ? <Navigate to="/feed" replace /> : <SignUp />} />
-        <Route path="/signin" element={LoggedIn ? <Navigate to="/feed" replace /> : <SignIn />} />
+        <Route path="/signup" element={<GuestRoute> <SignUp/> </GuestRoute>} />
+        <Route path="/signin" element={<GuestRoute> <SignIn/> </GuestRoute>} />
 
-        <Route path="/feed" element={LoggedIn ? <Feed /> : <Navigate to="/" replace /> } />
-        <Route path="/dashboard" element={LoggedIn ? <Dashboard /> : <Navigate to="/" replace /> } />
+        <Route path="/feed" element={<ProtectedRoute> <Feed /> </ProtectedRoute> } />
+        <Route path="/dashboard" element={<ProtectedRoute> <Dashboard /> </ProtectedRoute> } />
 
         <Route path="*" element={<h1>404 Not Found</h1>} />
       </Routes>

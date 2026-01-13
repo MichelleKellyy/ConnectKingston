@@ -1,8 +1,13 @@
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 export default function Dashboard() {
-  const {user, loading} = useAuth();
+  const {user, loading, logout} = useAuth();
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
 
   return (
     <>
@@ -12,6 +17,8 @@ export default function Dashboard() {
       ) : (
         <p>Not logged in</p>
       )}
+
+      <button onClick={handleLogout}>Log Out</button>
 
     </>
   );

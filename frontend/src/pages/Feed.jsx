@@ -141,23 +141,11 @@ export default function Feed() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700 shadow-sm">
-              Opportunities
-            </p>
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight">
               Volunteer Feed
             </h1>
             <p className="mt-2 text-slate-600">
               Browse opportunities and favorite the ones you like.
-            </p>
-
-            <p className="mt-3 text-sm text-slate-600">
-              Favorites:{" "}
-              <span className="font-semibold text-indigo-700">
-                {favorites.size}
-              </span>
-              {" "}
-              <span className="text-slate-400">(see /favorites)</span>
             </p>
           </div>
 

@@ -114,9 +114,6 @@ export default function Favorites() {
       <Nav />
 
       <div className="mx-auto max-w-6xl px-4 py-12">
-        <p className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700 shadow-sm">
-          Favorites
-        </p>
         <h1 className="mt-4 text-3xl font-extrabold tracking-tight">
           Your Favourites
         </h1>

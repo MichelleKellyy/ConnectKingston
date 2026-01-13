@@ -83,16 +83,11 @@ export default function SignUp() {
             <div className="w-full max-w-md">
               {/* Card */}
               <div className="rounded-3xl bg-white p-8 shadow-xl ring-1 ring-black/5">
-                {/* Pill */}
-                <p className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700 shadow-sm">
-                  Connect • Volunteer • Build community
-                </p>
-
                 <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
                   Create your account
                 </h1>
                 <p className="mt-2 text-sm text-slate-600">
-                  Get started now — finish your profile after.
+                  Get started now, finish your profile after.
                 </p>
 
                 {/* Error message */}
@@ -103,22 +98,6 @@ export default function SignUp() {
                 )}
 
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-                  {/* Name (optional) */}
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">
-                      Name <span className="text-slate-400">(optional)</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Your name"
-                      autoComplete="name"
-                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900
-                                 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                    />
-                  </div>
-
                   {/* Email */}
                   <div>
                     <label className="text-sm font-medium text-slate-700">
@@ -152,22 +131,6 @@ export default function SignUp() {
                     <p className="mt-2 text-xs text-slate-500">
                       Use 6+ characters.
                     </p>
-                  </div>
-
-                  {/* Confirm password (optional but nice) */}
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">
-                      Confirm password <span className="text-slate-400">(optional)</span>
-                    </label>
-                    <input
-                      type="password"
-                      value={confirm}
-                      onChange={(e) => setConfirm(e.target.value)}
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900
-                                 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                    />
                   </div>
 
                   <button

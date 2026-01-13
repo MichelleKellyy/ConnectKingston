@@ -68,16 +68,11 @@ export default function SignIn() {
             <div className="w-full max-w-md">
               {/* Card */}
               <div className="rounded-3xl bg-white p-8 shadow-xl ring-1 ring-black/5">
-                {/* Pill */}
-                <p className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-sm text-slate-700 shadow-sm">
-                  Connect • Volunteer • Build community
-                </p>
-
                 <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-slate-900">
                   Sign in
                 </h1>
                 <p className="mt-2 text-sm text-slate-600">
-                  Welcome back — let’s get you connected.
+                  Welcome back, let’s get you connected.
                 </p>
 
                 {/* Error */}

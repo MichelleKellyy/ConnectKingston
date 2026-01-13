@@ -88,35 +88,6 @@ export default function Nav() {
               </NavLink>
             </>
           )}
-
-          {/* Right side auth buttons */}
-          {!user ? (
-            <div className="ml-2 flex items-center gap-2">
-              <Link
-                to="/signin"
-                className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800
-                           hover:bg-slate-50 transition"
-              >
-                Sign in
-              </Link>
-
-              <Link
-                to="/signup"
-                className="rounded-2xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white
-                           hover:bg-indigo-500 transition active:scale-[0.98] shadow-sm"
-              >
-                Get started
-              </Link>
-            </div>
-          ) : (
-            <button
-              onClick={handleLogout}
-              className="ml-2 rounded-2xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-700
-                         hover:bg-red-50 transition active:scale-[0.98]"
-            >
-              Log out
-            </button>
-          )}
         </nav>
       </div>
     </header>

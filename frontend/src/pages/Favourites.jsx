@@ -167,7 +167,7 @@ function FavoriteCard({ opp, onRemove }) {
         aria-label="Remove from favorites"
         title="Remove from favorites"
       >
-        <span className="text-red-600">♥</span>
+        <span className="text-yellow-400">★</span>
       </button>
 
       <h2 className="text-lg font-bold text-slate-900">{opp.title}</h2>

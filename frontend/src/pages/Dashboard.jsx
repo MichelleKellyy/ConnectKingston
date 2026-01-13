@@ -42,6 +42,10 @@ export default function Dashboard() {
   const [draft, setDraft] = useState(() => loadProfile());
   const [isEditing, setIsEditing] = useState(false);
 
+  // NEW: keep raw text while editing so commas don’t disappear
+  const [skillsText, setSkillsText] = useState("");
+  const [interestsText, setInterestsText] = useState("");
+
   const [savedMsg, setSavedMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -50,6 +54,9 @@ export default function Dashboard() {
     const p = loadProfile();
     setProfile(p);
     setDraft(p);
+    // optional: keep text states in sync too (harmless)
+    setSkillsText((p.skills || []).join(", "));
+    setInterestsText((p.interests || []).join(", "));
   }, []);
 
   const handleLogout = async () => {
@@ -63,6 +70,11 @@ export default function Dashboard() {
 
   function startEdit() {
     setDraft(profile);
+
+    // NEW: initialize editable text inputs from current profile
+    setSkillsText((profile.skills || []).join(", "));
+    setInterestsText((profile.interests || []).join(", "));
+
     setIsEditing(true);
     setSavedMsg("");
     setErrorMsg("");
@@ -70,6 +82,11 @@ export default function Dashboard() {
 
   function cancelEdit() {
     setDraft(profile);
+
+    // NEW: reset editable text too
+    setSkillsText((profile.skills || []).join(", "));
+    setInterestsText((profile.interests || []).join(", "));
+
     setIsEditing(false);
     setSavedMsg("");
     setErrorMsg("");
@@ -88,8 +105,15 @@ export default function Dashboard() {
       return;
     }
 
-    setProfile(draft);
-    saveProfile(draft);
+    // NEW: parse comma lists ONLY when saving
+    const nextDraft = {
+      ...draft,
+      skills: parseCommaList(skillsText),
+      interests: parseCommaList(interestsText),
+    };
+
+    setProfile(nextDraft);
+    saveProfile(nextDraft);
     setIsEditing(false);
     setSavedMsg("Saved!");
     setTimeout(() => setSavedMsg(""), 2000);
@@ -120,16 +144,6 @@ export default function Dashboard() {
     if (completion === 75) return "Almost there";
     return "Complete";
   }, [completion]);
-
-  // For inputs (editable mode)
-  const draftSkillsText = useMemo(
-    () => (draft.skills || []).join(", "),
-    [draft.skills]
-  );
-  const draftInterestsText = useMemo(
-    () => (draft.interests || []).join(", "),
-    [draft.interests]
-  );
 
   if (loading) {
     return (
@@ -236,9 +250,14 @@ export default function Dashboard() {
             {/* Fields */}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {/* Postal */}
-              <FieldCard title="Postal code" done={Boolean(profile.postalCode?.trim())}>
+              <FieldCard
+                title="Postal code"
+                done={Boolean(profile.postalCode?.trim())}
+              >
                 {!isEditing ? (
-                  <p className="mt-2 text-slate-700">{profile.postalCode || "—"}</p>
+                  <p className="mt-2 text-slate-700">
+                    {profile.postalCode || "—"}
+                  </p>
                 ) : (
                   <input
                     value={draft.postalCode}
@@ -262,7 +281,9 @@ export default function Dashboard() {
                 ) : (
                   <select
                     value={draft.commitmentHours}
-                    onChange={(e) => updateDraft("commitmentHours", e.target.value)}
+                    onChange={(e) =>
+                      updateDraft("commitmentHours", e.target.value)
+                    }
                     className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
                                outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
                   >
@@ -271,7 +292,9 @@ export default function Dashboard() {
                     <option value="2–4 hrs/week">2–4 hrs/week</option>
                     <option value="5–10 hrs/week">5–10 hrs/week</option>
                     <option value="10+ hrs/week">10+ hrs/week</option>
-                    <option value="One-time / flexible">One-time / flexible</option>
+                    <option value="One-time / flexible">
+                      One-time / flexible
+                    </option>
                   </select>
                 )}
               </FieldCard>
@@ -289,10 +312,8 @@ export default function Dashboard() {
                       Comma-separated (e.g. Tutoring, First aid, Design)
                     </p>
                     <input
-                      value={draftSkillsText}
-                      onChange={(e) =>
-                        updateDraft("skills", parseCommaList(e.target.value))
-                      }
+                      value={skillsText}
+                      onChange={(e) => setSkillsText(e.target.value)}
                       placeholder="Skills..."
                       className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
                                  outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -302,7 +323,10 @@ export default function Dashboard() {
               </FieldCard>
 
               {/* Interests */}
-              <FieldCard title="Interests" done={(profile.interests || []).length > 0}>
+              <FieldCard
+                title="Interests"
+                done={(profile.interests || []).length > 0}
+              >
                 {!isEditing ? (
                   <TagList
                     items={profile.interests}
@@ -314,10 +338,8 @@ export default function Dashboard() {
                       Comma-separated (e.g. Youth, Environment, Community)
                     </p>
                     <input
-                      value={draftInterestsText}
-                      onChange={(e) =>
-                        updateDraft("interests", parseCommaList(e.target.value))
-                      }
+                      value={interestsText}
+                      onChange={(e) => setInterestsText(e.target.value)}
                       placeholder="Interests..."
                       className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
                                  outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
@@ -358,37 +380,54 @@ export default function Dashboard() {
           </div>
 
           {/* Completion bar */}
-          <div className="md:col-span-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-semibold text-slate-900">Profile completeness</p>
-
-              </div>
-
-              <div className="w-full sm:w-96">
-                <div className="h-2 w-full rounded-full bg-slate-200">
-                  <div
-                    className="h-2 rounded-full bg-indigo-600 transition-all"
-                    style={{ width: `${completion}%` }}
-                  />
+          {completion != 100 && (
+            <div className="md:col-span-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold text-slate-900">
+                    Profile completeness
+                  </p>
+                  {/* kept but unused in UI right now */}
+                  {/* <p className="text-sm text-slate-600">{completionLabel}</p> */}
                 </div>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-4">
-                  <MiniCheck label="Postal" ok={Boolean(profile.postalCode?.trim())} />
-                  <MiniCheck label="Hours" ok={Boolean(profile.commitmentHours?.trim())} />
-                  <MiniCheck label="Skills" ok={(profile.skills || []).length > 0} />
-                  <MiniCheck label="Interests" ok={(profile.interests || []).length > 0} />
+                <div className="w-full sm:w-96">
+                  <div className="h-2 w-full rounded-full bg-slate-200">
+                    <div
+                      className="h-2 rounded-full bg-indigo-600 transition-all"
+                      style={{ width: `${completion}%` }}
+                    />
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-4">
+                    <MiniCheck
+                      label="Postal"
+                      ok={Boolean(profile.postalCode?.trim())}
+                    />
+                    <MiniCheck
+                      label="Hours"
+                      ok={Boolean(profile.commitmentHours?.trim())}
+                    />
+                    <MiniCheck label="Skills" ok={(profile.skills || []).length > 0} />
+                    <MiniCheck
+                      label="Interests"
+                      ok={(profile.interests || []).length > 0}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* If no user */}
         {!user && (
           <div className="mt-6 rounded-3xl border border-amber-200 bg-amber-50 p-6 text-amber-800">
             You’re not logged in.{" "}
-            <Link className="font-semibold underline underline-offset-4" to="/signin">
+            <Link
+              className="font-semibold underline underline-offset-4"
+              to="/signin"
+            >
               Sign in
             </Link>
             .
@@ -407,7 +446,9 @@ function FieldCard({ title, done, children }) {
         <span
           className={[
             "rounded-full px-2 py-0.5 text-xs font-semibold",
-            done ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700",
+            done
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-slate-200 text-slate-700",
           ].join(" ")}
         >
           {done ? "Done" : "Missing"}
@@ -442,7 +483,9 @@ function MiniCheck({ label, ok }) {
       <span
         className={[
           "inline-flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-bold",
-          ok ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-700",
+          ok
+            ? "bg-emerald-100 text-emerald-700"
+            : "bg-slate-200 text-slate-700",
         ].join(" ")}
       >
         {ok ? "✓" : "—"}

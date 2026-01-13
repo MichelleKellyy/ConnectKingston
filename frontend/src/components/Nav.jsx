@@ -56,15 +56,14 @@ export default function Nav() {
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         {/* Brand */}
-        <Link
-          to="/"
+        <div
           className="flex items-center gap-2 font-extrabold tracking-tight text-slate-900"
         >
           <span className="grid h-9 w-9 place-items-center rounded-2xl bg-indigo-600 text-white shadow-sm">
-            CK
+            🤝
           </span>
           <span>ConnectKingston</span>
-        </Link>
+        </div>
 
         {/* Nav Links */}
         <nav className="flex items-center gap-2">
@@ -81,9 +80,6 @@ export default function Nav() {
               <NavLink to="/favourites" className={linkClass}>
                 <span className="flex items-center gap-2">
                   Favourites
-                  <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-bold text-slate-700">
-                    {favCount}
-                  </span>
                 </span>
               </NavLink>
             </>

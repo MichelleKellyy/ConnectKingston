@@ -24,7 +24,7 @@ export default function Home() {
             </p>
 
             <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-white sm:text-6xl">
-              Connect Kingston
+              ConnectKingston
             </h1>
 
             <p className="mt-4 text-lg text-white/90">

@@ -79,6 +79,11 @@ export default function Feed() {
   // favorites are a Set of ids for fast lookups
   const [favorites, setFavorites] = useState(() => loadFavorites());
 
+  // NEW: toggle between "matched" feed and "all/unmatched" feed
+  // - matched: you will plug your AI matching output into `matchedOpportunities`
+  // - unmatched: shows ALL opportunities (your request)
+  const [feedView, setFeedView] = useState("matched"); // "matched" | "all"
+
   useEffect(() => {
     let ignore = false;
 
@@ -102,11 +107,30 @@ export default function Feed() {
     };
   }, []);
 
+  // ✅ PLACEHOLDER: This is where your AI matched list goes.
+  // Option A (IDs): const matchedIds = new Set([...])
+  // Option B (objects): const matchedOpportunities = [...]
+  //
+  // Right now it returns an empty array so "matched" feed shows none until you wire it.
+  const matchedOpportunities = useMemo(() => {
+    // TODO: replace this with your AI output
+    // Example using IDs:
+    // const matchedIds = new Set(["1","3"]);
+    // return opportunities.filter(o => matchedIds.has(o.id));
+    return [];
+  }, [opportunities]);
+
+  // base list depends on feedView
+  const baseList = useMemo(() => {
+    return feedView === "matched" ? matchedOpportunities : opportunities;
+  }, [feedView, matchedOpportunities, opportunities]);
+
+  // apply search on top of whichever list is active
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return opportunities;
+    if (!q) return baseList;
 
-    return opportunities.filter((o) => {
+    return baseList.filter((o) => {
       const haystack = [
         o.title,
         o.org,
@@ -121,7 +145,7 @@ export default function Feed() {
 
       return haystack.includes(q);
     });
-  }, [opportunities, query]);
+  }, [baseList, query]);
 
   function toggleFavorite(id) {
     setFavorites((prev) => {
@@ -149,16 +173,42 @@ export default function Feed() {
             </p>
           </div>
 
-          {/* Search */}
-          <div className="w-full sm:w-80">
-            <label className="text-sm font-medium text-slate-700">Search</label>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Try: youth, environment, downtown..."
-              className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
-                         outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-            />
+          {/* Search + Toggle button */}
+          <div className="w-full sm:w-[32rem]">
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <label className="text-sm font-medium text-slate-700">
+                  Search
+                </label>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Try: youth, environment, downtown..."
+                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
+                             outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFeedView((v) => (v === "matched" ? "all" : "matched"))
+                }
+                className="h-[50px] whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-4 font-semibold
+                           text-slate-800 shadow-sm hover:bg-slate-50 transition active:scale-[0.98]"
+              >
+                {feedView === "matched" ? "Show all" : "Show matched"}
+              </button>
+            </div>
+
+            <p className="mt-2 text-xs text-slate-500">
+              Viewing:{" "}
+              <span className="font-semibold text-slate-700">
+                {feedView === "matched"
+                  ? "Matched feed (AI)"
+                  : "All opportunities (unmatched)"}
+              </span>
+            </p>
           </div>
         </div>
 
@@ -181,7 +231,9 @@ export default function Feed() {
           <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
             <p className="font-semibold text-slate-900">No results</p>
             <p className="mt-1 text-sm text-slate-600">
-              Try a different search term.
+              {feedView === "matched"
+                ? "No matched opportunities yet. Try 'Show all'."
+                : "Try a different search term."}
             </p>
           </div>
         )}
@@ -232,8 +284,8 @@ function OpportunityCard({ opp, onClick, isFavorited, onToggleFavorite }) {
         aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
         title={isFavorited ? "Remove from favorites" : "Add to favorites"}
       >
-        <span className={isFavorited ? "text-red-600" : "text-slate-400"}>
-          {isFavorited ? "♥" : "♡"}
+        <span className={isFavorited ? "text-yellow-400" : "text-slate-400"}>
+          {isFavorited ? "★" : "☆"}
         </span>
       </button>
 

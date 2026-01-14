@@ -170,7 +170,7 @@ export default function Dashboard() {
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight">
               Welcome{user?.email ? "," : ""}{" "}
               <span className="text-indigo-700">
-                {user?.email ? user.email : "Guest"}
+                {user?.email?.includes("@") ? user.email.split("@")[0] : "Guest"}
               </span>
             </h1>
 

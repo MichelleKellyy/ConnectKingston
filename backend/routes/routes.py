@@ -4,22 +4,26 @@ from model.model import User
 
 router = APIRouter()
 
-# ---------------- GET default message ----------------
+#  GET default message 
 @router.get('/')
 def default_Msg():
     return helper.default_msg()
 
-# ---------------- CREATE USER ----------------
+@router.get('/getuser/{uid}')
+def get_single_user(uid:str):
+    return helper.get_user_by_id(uid)
+
+# CREATE USER 
 @router.post('/create_user')
 def createUser(user: User):
     return helper.create_user(user)
 
-# ---------------- UPDATE USER ----------------
+# UPDATE USER 
 @router.put('/update_user/{user_id}')
 def updateUser(user_id: str = Path(..., description="ID of the user to update"), updated_user: User = ...):
     return helper.update_user(user_id, updated_user)
 
-# ---------------- DELETE USER ----------------
+# DELETE USER 
 @router.delete('/delete_user/{user_id}')
 def deleteUser(user_id: str = Path(..., description="ID of the user to delete")):
     return helper.delete_user(user_id)

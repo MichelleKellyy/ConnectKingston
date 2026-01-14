@@ -5,7 +5,16 @@ from fastapi import HTTPException
 def default_msg():
     return "Welcome to backend"
 
-# ---------------- CREATE USER ----------------
+#GET USER BY FIREBASE ID
+def get_user_by_id(uid:str):
+    result=user_collection.find_one({"user_id":uid})
+    if(result):
+        result['_id']=str(result['_id'])
+        return result
+    else:
+        return "User not exist"
+    
+# CREATE USER 
 def create_user(user: User):
     try:
         # Check if user already exists
@@ -21,7 +30,7 @@ def create_user(user: User):
         raise HTTPException(status_code=500, detail=f"Failed to create user: {str(error)}")
 
 
-# ---------------- UPDATE USER ----------------
+# UPDATE USER 
 def update_user(user_id: str, updated_user: User):
     try:
         result = user_collection.update_one(
@@ -35,7 +44,7 @@ def update_user(user_id: str, updated_user: User):
         raise HTTPException(status_code=500, detail=f"Failed to update user: {str(error)}")
 
 
-# ---------------- DELETE USER ----------------
+# DELETE USER 
 def delete_user(user_id: str):
     try:
         result = user_collection.delete_one({"user_id": user_id})

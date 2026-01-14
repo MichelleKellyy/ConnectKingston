@@ -3,7 +3,6 @@ import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import Nav from "../components/Nav";
 
-
 const DEFAULT_PROFILE = {
   postalCode: "",
   commitmentHours: "",
@@ -39,7 +38,6 @@ async function saveProfileToBackend(user, profile) {
     email: user.email,
     profile: {
       full_name: profile.full_name,
-      neighborhood: profile.neighborhood,
       postal_code: profile.postalCode,
       availability_hours_per_week: profile.commitmentHoursNum,
       skills: profile.skills,
@@ -66,6 +64,40 @@ async function saveProfileToBackend(user, profile) {
   }
 }
 
+async function saveEditedProfileToBackend(user, profile) {
+  const payload = {
+    user_id: user.uid,
+    email: user.email,
+    profile: {
+      full_name: profile.full_name,
+      postal_code: profile.postalCode,
+      availability_hours_per_week: profile.commitmentHoursNum,
+      skills: profile.skills,
+      interests: profile.interests,
+    },
+  };
+
+  try {
+    const res = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/update_user/${user.uid}`, // PUT endpoint
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Failed to update profile: ${res.status} ${text}`);
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error("Error updating profile on backend:", err);
+    throw err; // re-throw so the calling function can handle it
+  }
+}
 
 
 export default function Dashboard() {
@@ -76,8 +108,9 @@ export default function Dashboard() {
   const [profile, setProfile] = useState({ ...DEFAULT_PROFILE });
   const [draft, setDraft] = useState({ ...DEFAULT_PROFILE });
   const [fullNameText, setFullNameText] = useState("");
-  const [neighborhoodText, setNeighborhoodText] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [profileExists, setProfileExists] = useState(false);
+
 
   // NEW: keep raw text while editing so commas don’t disappear
   const [skillsText, setSkillsText] = useState("");
@@ -107,7 +140,6 @@ export default function Dashboard() {
           skills: profileData.skills || [],
           interests: profileData.interests || [],
           full_name: profileData.full_name || "",
-          neighborhood: profileData.neighborhood || "",
           commitmentHoursNum: profileData.availability_hours_per_week || "",
         });
 
@@ -118,13 +150,11 @@ export default function Dashboard() {
           skills: profileData.skills || [],
           interests: profileData.interests || [],
           full_name: profileData.full_name || "",
-          neighborhood: profileData.neighborhood || "",
           commitmentHoursNum: profileData.availability_hours_per_week || "",
         });
 
         // Initialize editable text inputs
         setFullNameText(profileData.full_name || "");
-        setNeighborhoodText(profileData.neighborhood || "");
         setSkillsText((profileData.skills || []).join(", "));
         setInterestsText((profileData.interests || []).join(", "));
       }
@@ -141,7 +171,6 @@ export default function Dashboard() {
     setSkillsText((profile.skills || []).join(", "));
     setInterestsText((profile.interests || []).join(", "));
     setFullNameText(profile.full_name || "");
-    setNeighborhoodText(profile.neighborhood || "");
     setIsEditing(true);
     setSavedMsg("");
     setErrorMsg("");
@@ -154,7 +183,6 @@ export default function Dashboard() {
     setSkillsText((profile.skills || []).join(", "));
     setInterestsText((profile.interests || []).join(", "));
     setFullNameText(profile.full_name || "");
-    setNeighborhoodText(profile.neighborhood || "");
     setIsEditing(false);
     setSavedMsg("");
     setErrorMsg("");
@@ -172,20 +200,21 @@ export default function Dashboard() {
       setErrorMsg("Full name is required.");
       return;
     }
-    if (!neighborhoodText.trim()) {
-      setErrorMsg("Neighborhood is required.");
-      return;
-    }
+
     if (!draft.commitmentHours) {
       setErrorMsg("Please select weekly commitment hours.");
       return;
+    }
+    if (profileAlreadyExists) {
+      await saveEditedProfileToBackend(user, nextDraft);
+    } else {
+      await saveProfileToBackend(user, nextDraft);
     }
 
     // Prepare nextDraft
     const nextDraft = {
       ...draft,
       full_name: fullNameText.trim(),
-      neighborhood: neighborhoodText.trim(),
       skills: parseCommaList(skillsText),
       interests: parseCommaList(interestsText),
       commitmentHoursNum: draft.commitmentHours,
@@ -347,20 +376,6 @@ export default function Dashboard() {
               )}
             </FieldCard>
 
-            {/* Neighborhood */}
-            <FieldCard title="Neighborhood" done={Boolean(profile.neighborhood?.trim())}>
-              {!isEditing ? (
-                <p className="mt-2 text-slate-700">{profile.neighborhood || "—"}</p>
-              ) : (
-                <input
-                  value={neighborhoodText}
-                  onChange={(e) => setNeighborhoodText(e.target.value)}
-                  placeholder="Your neighborhood"
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
-                 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                />
-              )}
-            </FieldCard>
             {/* Fields */}
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               {/* Postal */}

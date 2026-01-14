@@ -8,12 +8,6 @@ class Profile(BaseModel):
         max_length=100, 
         description="User's full name (max length 100)"
     )
-    neighborhood: str = Field(
-        ..., 
-        min_length=1, 
-        max_length=50, 
-        description="Neighborhood in Kingston (max length 50)"
-    )
     postal_code: str = Field(
         ..., 
         min_length=3, 

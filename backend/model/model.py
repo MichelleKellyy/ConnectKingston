@@ -24,8 +24,7 @@ class Profile(BaseModel):
     interests: List[str] = Field(..., description="List of interests")
     availability_hours_per_week: str= Field(
         ..., 
-        ge=1, 
-        le=168, 
+        min_length=1, 
         description="Availability hours per week (0-168)"
     )
 

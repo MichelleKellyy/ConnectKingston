@@ -3,7 +3,6 @@ import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import Nav from "../components/Nav";
 
-// const PROFILE_KEY = "connectkingston_profile_v1";
 
 const DEFAULT_PROFILE = {
   postalCode: "",
@@ -17,6 +16,21 @@ function parseCommaList(text) {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+async function fetchUserProfile(userId) {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/getuser/${userId}`);
+    if (!res.ok) {
+      console.error("Failed to fetch profile:", res.status);
+      return null;
+    }
+    const data = await res.json();
+    return data.profile || null;
+  } catch (err) {
+    console.error("Error fetching profile:", err);
+    return null;
+  }
 }
 
 async function saveProfileToBackend(user, profile) {
@@ -53,19 +67,6 @@ async function saveProfileToBackend(user, profile) {
 }
 
 
-// function loadProfile() {
-//   try {
-//     const raw = localStorage.getItem(PROFILE_KEY);
-//     const parsed = raw ? JSON.parse(raw) : null;
-//     return { ...DEFAULT_PROFILE, ...(parsed || {}) };
-//   } catch {
-//     return { ...DEFAULT_PROFILE };
-//   }
-// }
-
-// function saveProfile(profile) {
-//   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-// }
 
 export default function Dashboard() {
   const { user, loading, logout } = useAuth();
@@ -85,16 +86,6 @@ export default function Dashboard() {
   const [savedMsg, setSavedMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  // keep draft in sync on first render
-  // useEffect(() => {
-  //   const p = loadProfile();
-  //   setProfile(p);
-  //   setDraft(p);
-  //   // optional: keep text states in sync too (harmless)
-  //   setSkillsText((p.skills || []).join(", "));
-  //   setInterestsText((p.interests || []).join(", "));
-  // }, []);
-
   const handleLogout = async () => {
     try {
       await logout();
@@ -103,6 +94,45 @@ export default function Dashboard() {
       console.error(err);
     }
   };
+  useEffect(() => {
+    if (!user) return;
+
+    async function loadProfile() {
+      const profileData = await fetchUserProfile(user.uid);
+      if (profileData) {
+        // Set profile state
+        setProfile({
+          postalCode: profileData.postal_code || "",
+          commitmentHours: profileData.availability_hours_per_week || "",
+          skills: profileData.skills || [],
+          interests: profileData.interests || [],
+          full_name: profileData.full_name || "",
+          neighborhood: profileData.neighborhood || "",
+          commitmentHoursNum: profileData.availability_hours_per_week || "",
+        });
+
+        // Set draft for editing
+        setDraft({
+          postalCode: profileData.postal_code || "",
+          commitmentHours: profileData.availability_hours_per_week || "",
+          skills: profileData.skills || [],
+          interests: profileData.interests || [],
+          full_name: profileData.full_name || "",
+          neighborhood: profileData.neighborhood || "",
+          commitmentHoursNum: profileData.availability_hours_per_week || "",
+        });
+
+        // Initialize editable text inputs
+        setFullNameText(profileData.full_name || "");
+        setNeighborhoodText(profileData.neighborhood || "");
+        setSkillsText((profileData.skills || []).join(", "));
+        setInterestsText((profileData.interests || []).join(", "));
+      }
+    }
+
+    loadProfile();
+  }, [user]);
+
 
   function startEdit() {
     setDraft(profile);

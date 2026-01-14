@@ -95,7 +95,7 @@ async function saveEditedProfileToBackend(user, profile) {
     return await res.json();
   } catch (err) {
     console.error("Error updating profile on backend:", err);
-    throw err; // re-throw so the calling function can handle it
+    throw err;
   }
 }
 
@@ -110,7 +110,6 @@ export default function Dashboard() {
   const [fullNameText, setFullNameText] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [profileExists, setProfileExists] = useState(false);
-
 
   // NEW: keep raw text while editing so commas don’t disappear
   const [skillsText, setSkillsText] = useState("");
@@ -134,6 +133,7 @@ export default function Dashboard() {
       const profileData = await fetchUserProfile(user.uid);
       if (profileData) {
         // Set profile state
+        setProfileExists(true);
         setProfile({
           postalCode: profileData.postal_code || "",
           commitmentHours: profileData.availability_hours_per_week || "",
@@ -200,15 +200,9 @@ export default function Dashboard() {
       setErrorMsg("Full name is required.");
       return;
     }
-
     if (!draft.commitmentHours) {
       setErrorMsg("Please select weekly commitment hours.");
       return;
-    }
-    if (profileAlreadyExists) {
-      await saveEditedProfileToBackend(user, nextDraft);
-    } else {
-      await saveProfileToBackend(user, nextDraft);
     }
 
     // Prepare nextDraft
@@ -225,13 +219,19 @@ export default function Dashboard() {
     setSavedMsg("Saved!");
     setTimeout(() => setSavedMsg(""), 2000);
 
-    // Send to backend
+    // Send to backend: POST if new, PUT if exists
     try {
-      await saveProfileToBackend(user, nextDraft);
+      if (profileExists) {
+        await saveEditedProfileToBackend(user, nextDraft); // PUT
+      } else {
+        await saveProfileToBackend(user, nextDraft);       // POST
+        setProfileExists(true); // mark that profile now exists
+      }
     } catch (err) {
       setErrorMsg("Failed to save profile. Make sure all fields are valid.");
     }
   }
+
 
 
   // Completion: 25% for each filled category

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import List
 
 #creating a model so user can create a profile
@@ -11,7 +11,7 @@ class Profile(BaseModel):
 
 class User(BaseModel):
     user_id:str # this user id is UID that we will be getting fro firebase
-    email:EmailStr
+    email:str
     profile:Profile
 
 

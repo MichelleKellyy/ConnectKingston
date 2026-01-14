@@ -5,21 +5,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 connection_string = os.getenv("MONGO_URI")
+if not connection_string:
+    raise ValueError("MONGO_URI is missing from .env")
 
-client=MongoClient(connection_string,serverSelectionTimeoutMS=3000)
+client = MongoClient(connection_string, serverSelectionTimeoutMS=10000)
 
-#Selecting database
-user_database=client['Users']
-
-#selecting collection that exist inside database
-user_collection=user_database['user_profile']
-
+db = client["connectkingston"]  # one app database
+user_collection = db["user_profile"]
+opportunity_collection = db["opportunities"]
 
 def db_connect():
-    try: 
-        client.admin.command('ping')
-        print('Connected to MongoDB Successfully!!')
+    try:
+        client.admin.command("ping")
+        print("Connected to MongoDB Successfully!!")
     except Exception as error:
-        return {"Error":str(error)}
+        print("MongoDB connection error:", error)
 
 db_connect()

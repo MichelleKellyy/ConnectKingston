@@ -196,12 +196,28 @@ export default function Dashboard() {
     setErrorMsg("");
 
     // Validate mandatory fields
-    if (!fullNameText.trim()) {
+    if (fullNameText.trim().length < 2) {
       setErrorMsg("Full name is required.");
       return;
     }
     if (!draft.commitmentHours) {
       setErrorMsg("Please select weekly commitment hours.");
+      return;
+    }
+
+    if (draft.postalCode.trim().length !== 7) {
+      console.log(draft.postalCode.trim().length)
+      setErrorMsg("Please enter a valid Canadian postal code (e.g. M2E 2U7).");
+      return;
+    }
+
+    if (skillsText.trim().length < 2) {
+      setErrorMsg("Please add at least one skill (e.g. Cooking, Tutoring, Design).");
+      return;
+    }
+
+    if (interestsText.trim().length < 2) {
+      setErrorMsg("Please add at least one interest (e.g. Youth, Environment, Community).");
       return;
     }
 
@@ -214,10 +230,6 @@ export default function Dashboard() {
       commitmentHoursNum: draft.commitmentHours,
     };
 
-    setProfile(nextDraft);
-    setIsEditing(false);
-    setSavedMsg("Saved!");
-    setTimeout(() => setSavedMsg(""), 2000);
 
     // Send to backend: POST if new, PUT if exists
     try {
@@ -227,6 +239,10 @@ export default function Dashboard() {
         await saveProfileToBackend(user, nextDraft);       // POST
         setProfileExists(true); // mark that profile now exists
       }
+      setProfile(nextDraft);
+      setIsEditing(false);
+      setSavedMsg("Saved!");
+      setTimeout(() => setSavedMsg(""), 2000);
     } catch (err) {
       setErrorMsg("Failed to save profile. Make sure all fields are valid.");
     }
@@ -285,7 +301,9 @@ export default function Dashboard() {
             <h1 className="mt-4 text-3xl font-extrabold tracking-tight">
               Welcome{user?.email ? "," : ""}{" "}
               <span className="text-indigo-700">
-                {user?.email ? user.email : "Guest"}
+                {user?.email
+                  ? user.email.split("@")[0].charAt(0).toUpperCase() + user.email.split("@")[0].slice(1)
+                  : "Guest"}
               </span>
             </h1>
 

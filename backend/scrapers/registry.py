@@ -1,6 +1,8 @@
 from typing import Callable, Dict, List, Any
 
 from scrapers.sources.cityofkingston import scrape_city_of_kingston_volunteering
+from scrapers.sources.providencecare import scrape_providencecare_volunteer
+
 
 # A scraper returns a list of opportunity dicts
 ScrapeFn = Callable[[], List[Dict[str, Any]]]
@@ -8,6 +10,7 @@ ScrapeFn = Callable[[], List[Dict[str, Any]]]
 REGISTRY: Dict[str, ScrapeFn] = {
     # key = source name used in URLs and stored in Mongo
     "cityofkingston": scrape_city_of_kingston_volunteering,
+    "providencecare": scrape_providencecare_volunteer,
 }
 
 def list_sources() -> List[str]:

@@ -1,7 +1,6 @@
 from model.model import User
 from database.mongo import user_collection
 from fastapi import HTTPException
-
 def default_msg():
     return "Welcome to backend"
 
@@ -57,3 +56,26 @@ def delete_user(user_id: str):
         return {"message": "User deleted successfully"}
     except Exception as error:
         raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(error)}")
+    
+
+def normalize_user(user_doc):
+    p = user_doc["profile"]
+    return {
+        "full_name": p.get("full_name", ""),
+        "location": p.get("postal_code", ""),
+        "skills": p.get("skills", []),
+        "interests": p.get("interests", []),
+        "availability_hours": p.get("availability_hours_per_week", "")
+    }
+
+
+def normalize_opps(opps):
+    normalized = []
+    for o in opps:
+        normalized.append({
+            "title": o.get("raw", {}).get("title", "Untitled"),
+            "location": o.get("location_text", ""),
+            "cause": o.get("organization", ""),
+            "description": o.get("description", "")
+        })
+    return normalized

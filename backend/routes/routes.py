@@ -1,10 +1,12 @@
 import controller.controller as helper
 from fastapi import APIRouter, Path, Query, HTTPException
 from model.model import User
-
+from database.mongo import user_collection, opportunity_collection
 from controller.opportunity_controller import ingest_source, ingest_all
 from scrapers.registry import list_sources
 from database.opportunity import list_opportunities
+from utils.llm import match_with_llm_ids
+from bson import ObjectId
 
 router = APIRouter()
 
@@ -60,3 +62,61 @@ def ingest_one(source: str):
 def get_unmatched(limit: int = Query(50, ge=1, le=200)):
     items = list_opportunities(limit=limit)
     return {"items": items, "count": len(items)}
+
+#For LLM match results
+
+
+@router.get("/match/{user_id}")
+async def get_matches(user_id: str):
+    # ---------------- Fetch user ----------------
+    user_doc = user_collection.find_one({"user_id": user_id})
+    if not user_doc:
+        return {"error": "User not found"}
+
+    # ---------------- Fetch opportunities ----------------
+    opps_doc = list(opportunity_collection.find())  # fetch all opportunities
+
+    # ---------------- Normalize user ----------------
+    profile = helper.normalize_user(user_doc)
+
+    # ---------------- Prepare opportunities for LLM ----------------
+    opportunities = []
+    for opp in opps_doc:
+        parsed = opp.get("parsed", {})
+        opportunities.append({
+            "_id": str(opp["_id"]),  # LLM sees _id as string
+            "title": parsed.get("title", "No title"),
+            "description": parsed.get("description", "No description provided"),
+            "location": opp.get("location_text", "Unknown"),
+            "cause": opp.get("organization", "Unknown"),
+            "availability": parsed.get("availability", "Not specified")
+        })
+
+# ---------------- Ask LLM to select IDs ----------------
+    try:
+        matched_ids, matched_ids_raw = await match_with_llm_ids(profile, opportunities)
+        #print("Raw LLM output:", matched_ids_raw)
+
+        if not isinstance(matched_ids, list):
+            return {"error": "LLM did not return a list of IDs", "raw": matched_ids_raw}
+
+    except Exception as e:
+        return {"error": "LLM match failed", "details": str(e)}
+
+
+# ---------------- Fetch full opportunity objects by _id ----------------
+    matched_opps = []
+    for _id in matched_ids:
+        try:
+            opp_obj = opportunity_collection.find_one({"_id": ObjectId(_id)})
+            if opp_obj:
+                matched_opps.append(opp_obj)
+        except Exception:
+            continue  # skip invalid _id
+
+# ---------------- Return result ----------------
+    return {
+        "user_id": user_id,
+        "raw_llm_output": matched_ids_raw,  # keep the raw output for storage/debugging
+        "matches": str(matched_opps)
+    }

@@ -3,6 +3,8 @@ import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import Nav from "../components/Nav";
 
+import bg from "../assets/img2.jpg";
+
 const DEFAULT_PROFILE = {
   postalCode: "",
   commitmentHours: "",
@@ -278,8 +280,12 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <Nav />
+      <div
+          className="min-h-screen bg-fixed bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${bg})` }}
+        >
+          <div className="min-h-screen bg-slate-100/80 backdrop-blur-sm text-slate-900"></div>
+      <Nav />
         <div className="mx-auto max-w-6xl px-4 py-12">
           <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
             <p className="font-semibold text-slate-900">Loading dashboard…</p>
@@ -291,8 +297,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Nav />
+  <div
+      className="min-h-screen bg-fixed bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${bg})` }}
+    >
+      <div className="min-h-screen bg-slate-100/80 backdrop-blur-sm text-slate-900">
+          <Nav />
 
       <div className="mx-auto max-w-6xl px-4 py-12">
         {/* Header row */}
@@ -525,6 +535,7 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+        </div>
 
           {/* Completion bar */}
           {completion != 100 && (

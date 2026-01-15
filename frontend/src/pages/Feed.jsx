@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import Nav from "../components/Nav";
 
 const FAVORITES_KEY = "connectkingston_favorites_v1";
+import bg from "../assets/img2.jpg";
 
 /*id: "4",
 title: "Event Support Volunteer",
@@ -125,105 +126,114 @@ export default function Feed() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <Nav />
+    // BACKGROUND IMAGE (fixed)
+    <div
+      className="min-h-screen bg-fixed bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${bg})` }}
+    >
+      {/* overlay so content stays readable */}
+      <div className="min-h-screen bg-slate-100/80 backdrop-blur-sm text-slate-900">
+        <Nav />
 
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="mt-4 text-3xl font-extrabold tracking-tight">
-              Volunteer Feed
-            </h1>
-            <p className="mt-2 text-slate-600">
-              Browse opportunities and favorite the ones you like.
-            </p>
-          </div>
-
-          {/* Search + Toggle button */}
-          <div className="w-full sm:w-[32rem]">
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <label className="text-sm font-medium text-slate-700">
-                  Search
-                </label>
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Try: youth, environment, downtown..."
-                  className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
-                             outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setFeedView((v) => (v === "matched" ? "all" : "matched"))
-                }
-                className="h-[50px] whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-4 font-semibold
-                           text-slate-800 shadow-sm hover:bg-slate-50 transition active:scale-[0.98]"
-              >
-                {feedView === "matched" ? "Show all" : "Show matched"}
-              </button>
+        <div className="mx-auto max-w-6xl px-4 py-12">
+          {/* Header */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="mt-4 text-3xl font-extrabold tracking-tight">
+                Volunteer Feed
+              </h1>
+              <p className="mt-2 text-slate-600">
+                Browse opportunities and favorite the ones you like.
+              </p>
             </div>
 
-            <p className="mt-2 text-xs text-slate-500">
-              Viewing:{" "}
-              <span className="font-semibold text-slate-700">
+            {/* Search + Toggle button */}
+            <div className="w-full sm:w-[32rem]">
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <label className="text-sm font-medium text-slate-700">
+                    Search
+                  </label>
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Try: youth, environment, downtown..."
+                    className="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3
+                             outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFeedView((v) => (v === "matched" ? "all" : "matched"))
+                  }
+                  className="h-[50px] whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-4 font-semibold
+                           text-slate-800 shadow-sm hover:bg-slate-50 transition active:scale-[0.98]"
+                >
+                  {feedView === "matched" ? "Show all" : "Show matched"}
+                </button>
+              </div>
+
+              <p className="mt-2 text-xs text-slate-500">
+                Viewing:{" "}
+                <span className="font-semibold text-slate-700">
+                  {feedView === "matched"
+                    ? "Matched feed (AI)"
+                    : "All opportunities (unmatched)"}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* States */}
+          {loading && (
+            <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+              <p className="font-semibold text-slate-900">
+                Loading opportunities…
+              </p>
+              <p className="mt-1 text-sm text-slate-600">Hang tight.</p>
+            </div>
+          )}
+
+          {!loading && error && (
+            <div className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700">
+              <p className="font-semibold">Couldn’t load opportunities</p>
+              <p className="mt-1 text-sm">{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && filtered.length === 0 && (
+            <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+              <p className="font-semibold text-slate-900">No results</p>
+              <p className="mt-1 text-sm text-slate-600">
                 {feedView === "matched"
-                  ? "Matched feed (AI)"
-                  : "All opportunities (unmatched)"}
-              </span>
-            </p>
-          </div>
+                  ? "No matched opportunities yet. Try 'Show all'."
+                  : "Try a different search term."}
+              </p>
+            </div>
+          )}
+
+          {/* Cards */}
+          {!loading && !error && filtered.length > 0 && (
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((opp) => {
+                const id = opp._id || opp.source_id; // _id is string from your pipeline
+                return (
+                  <OpportunityCard
+                    key={id}
+                    opp={opp}
+                    isFavorited={favorites.has(id)}
+                    onToggleFavorite={() => toggleFavorite(id)}
+                    onClick={() => {
+                      console.log("Clicked opportunity", id);
+                    }}
+                  />
+                );
+              })}
+            </div>
+          )}
         </div>
-
-        {/* States */}
-        {loading && (
-          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <p className="font-semibold text-slate-900">Loading opportunities…</p>
-            <p className="mt-1 text-sm text-slate-600">Hang tight.</p>
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700">
-            <p className="font-semibold">Couldn’t load opportunities</p>
-            <p className="mt-1 text-sm">{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && filtered.length === 0 && (
-          <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <p className="font-semibold text-slate-900">No results</p>
-            <p className="mt-1 text-sm text-slate-600">
-              {feedView === "matched"
-                ? "No matched opportunities yet. Try 'Show all'."
-                : "Try a different search term."}
-            </p>
-          </div>
-        )}
-
-        {/* Cards */}
-        {!loading && !error && filtered.length > 0 && (
-          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((opp) => {
-              const id = opp._id || opp.source_id; // _id is string from your pipeline
-              return (
-                <OpportunityCard
-                  key={id}
-                  opp={opp}
-                  isFavorited={favorites.has(id)}
-                  onToggleFavorite={() => toggleFavorite(id)}
-                  onClick={() => {
-                    console.log("Clicked opportunity", id);
-                  }}
-                />
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );

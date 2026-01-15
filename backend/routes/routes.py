@@ -133,6 +133,7 @@ async def get_matches(user_id: str):
         except Exception:
             continue  # skip invalid _id
     print({"lenght of match_opps":len(matched_opps)})
+    print()
 # ---------------- Return result ----------------
     return {
         "user_id": user_id,

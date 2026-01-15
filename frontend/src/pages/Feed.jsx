@@ -105,7 +105,7 @@ export default function Feed() {
   const matchedOpportunities = useMemo(() => {
     if (!matchedIds || matchedIds.length === 0) return [];
 
-    const matchedSet = new Set(matchedIds); // for fast lookup
+    const matchedSet = new Set(matchedIds.map(m => m._id)); // old filtering by ID
     return opportunities.filter((opp) => matchedSet.has(opp._id));
   }, [opportunities, matchedIds]);
 

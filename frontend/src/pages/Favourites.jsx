@@ -111,12 +111,12 @@ export default function Favorites() {
   }
 
   return (
-    // ✅ CHANGED: background image wrapper
+    // background image wrapper
     <div
       className="min-h-screen bg-fixed bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${bg})` }}
     >
-      {/* ✅ CHANGED: overlay layer */}
+      {/* overlay layer */}
       <div className="min-h-screen bg-slate-100/80 backdrop-blur-sm text-slate-900">
         <Nav />
 

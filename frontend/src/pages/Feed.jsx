@@ -327,7 +327,6 @@ function OpportunityCard({ opp, onClick, isFavorited, onToggleFavorite }) {
       <div className="flex items-start justify-between gap-3 pr-24">
         <div>
           <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-          <p className="mt-1 text-sm text-slate-600">{org}</p>
         </div>
       </div>
 
@@ -339,8 +338,8 @@ function OpportunityCard({ opp, onClick, isFavorited, onToggleFavorite }) {
       {/* Bottom row pinned to bottom */}
       <div className="mt-5 flex items-center justify-between text-sm text-slate-600">
         <span className="inline-flex items-center gap-2">
-          <span className="text-slate-400">🔗</span>
-          {opp?.source || "source"}
+          <span className="text-slate-400">🏢</span>
+          {org}
         </span>
 
         <a

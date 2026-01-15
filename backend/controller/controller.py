@@ -13,8 +13,7 @@ def get_user_by_id(uid:str):
         return result
     else:
         return "User not exist"
-    
-# CREATE USER 
+# ---------------- CREATE USER ----------------
 def create_user(user: User):
     try:
         # Check if user already exists

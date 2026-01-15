@@ -3,55 +3,21 @@ import Nav from "../components/Nav";
 
 const FAVORITES_KEY = "connectkingston_favorites_v1";
 
-// Mock data for hackathon UI.
-// Replace fetchOpportunities() with your API call later.
-const MOCK_OPPORTUNITIES = [
-  {
-    id: "1",
-    title: "Community Cleanup Volunteer",
-    org: "Kingston Green Team",
-    location: "Downtown Kingston",
-    commitment: "2–4 hrs/week",
-    tags: ["Environment", "Outdoors", "Community"],
-    description:
-      "Help keep Kingston beautiful by joining weekend cleanups and community events.",
-  },
-  {
-    id: "2",
-    title: "Food Bank Sorting Helper",
-    org: "Kingston Food Bank",
-    location: "East End",
-    commitment: "1–2 hrs/week",
-    tags: ["Food", "Community", "Support"],
-    description:
-      "Assist with sorting donations and preparing food hampers for local families.",
-  },
-  {
-    id: "3",
-    title: "Youth Coding Mentor",
-    org: "Tech for Youth",
-    location: "Hybrid",
-    commitment: "5–10 hrs/month",
-    tags: ["Youth", "Tech", "Mentorship"],
-    description:
-      "Mentor students during coding club sessions. Beginners welcome—training provided.",
-  },
-  {
-    id: "4",
+
+    /*id: "4",
     title: "Event Support Volunteer",
     org: "Kingston Arts Council",
     location: "City Hall",
     commitment: "One-time / flexible",
     tags: ["Events", "Arts", "Community"],
     description:
-      "Help with check-in, guiding attendees, and setup/teardown at local events.",
-  },
-];
+      "Help with check-in, guiding attendees, and setup/teardown at local events.",*/
 
 async function fetchOpportunities() {
-  // Later: replace with API call
-  await new Promise((r) => setTimeout(r, 250));
-  return MOCK_OPPORTUNITIES;
+  const res = await fetch(`http://localhost:8000/opportunities/unmatched?limit=${50}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  return data.items;
 }
 
 // LocalStorage helpers
@@ -133,11 +99,11 @@ export default function Feed() {
     return baseList.filter((o) => {
       const haystack = [
         o.title,
-        o.org,
-        o.location,
-        o.commitment,
-        ...(o.tags || []),
+        o.organization,
         o.description,
+        o.raw?.availability,
+        o.raw?.group,         // nice for Providence Care sections
+        o.source,
       ]
         .filter(Boolean)
         .join(" ")
@@ -241,18 +207,20 @@ export default function Feed() {
         {/* Cards */}
         {!loading && !error && filtered.length > 0 && (
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((opp) => (
+            {filtered.map((opp) => {
+              const id = opp._id || opp.source_id; // _id is string from your pipeline
+              return (
               <OpportunityCard
-                key={opp.id}
+                key={id}
                 opp={opp}
-                isFavorited={favorites.has(opp.id)}
-                onToggleFavorite={() => toggleFavorite(opp.id)}
+                isFavorited={favorites.has(id)}
+                onToggleFavorite={() => toggleFavorite(id)}
                 onClick={() => {
-                  // Later: route to /opportunity/:id or open modal
-                  console.log("Clicked opportunity", opp.id);
+                  console.log("Clicked opportunity", id);
                 }}
               />
-            ))}
+            );
+            })}
           </div>
         )}
       </div>
@@ -261,6 +229,12 @@ export default function Feed() {
 }
 
 function OpportunityCard({ opp, onClick, isFavorited, onToggleFavorite }) {
+  const availability = opp?.raw?.availability;
+  const org = opp?.organization || "Unknown organization";
+  const title = opp?.title || "Untitled";
+  const desc = opp?.description || "";
+  const applyUrl = opp?.apply_url;
+
   return (
     <div
       className="group relative cursor-pointer rounded-3xl border border-slate-200 bg-white p-6 shadow-sm
@@ -276,7 +250,7 @@ function OpportunityCard({ opp, onClick, isFavorited, onToggleFavorite }) {
       <button
         type="button"
         onClick={(e) => {
-          e.stopPropagation(); // prevents triggering card click
+          e.stopPropagation();
           onToggleFavorite?.();
         }}
         className="absolute right-4 top-4 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm
@@ -291,39 +265,45 @@ function OpportunityCard({ opp, onClick, isFavorited, onToggleFavorite }) {
 
       <div className="flex items-start justify-between gap-3 pr-10">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">{opp.title}</h2>
-          <p className="mt-1 text-sm text-slate-600">{opp.org}</p>
+          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+          <p className="mt-1 text-sm text-slate-600">{org}</p>
         </div>
 
+        {/* Use availability (if present) like your old "commitment" pill */}
         <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-          {opp.commitment || "Flexible"}
+          {availability || "Flexible"}
         </span>
       </div>
 
       <p className="mt-3 text-sm text-slate-600 line-clamp-3">
-        {opp.description}
+        {desc}
       </p>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {(opp.tags || []).slice(0, 4).map((tag) => (
-          <span
-            key={tag}
-            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700"
-          >
-            {tag}
+      {/* Optional: show Providence Care group header if you save it in raw.group */}
+      {opp?.raw?.group && (
+        <div className="mt-4">
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700">
+            {opp.raw.group}
           </span>
-        ))}
-      </div>
+        </div>
+      )}
 
       <div className="mt-5 flex items-center justify-between text-sm text-slate-600">
         <span className="inline-flex items-center gap-2">
-          <span className="text-slate-400">📍</span>
-          {opp.location || "Unknown"}
+          <span className="text-slate-400">🔗</span>
+          {opp?.source || "source"}
         </span>
 
+      <a
+          href={applyUrl}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+        >
         <span className="font-semibold text-indigo-700 group-hover:text-indigo-600">
           View →
         </span>
+        </a>
       </div>
     </div>
   );

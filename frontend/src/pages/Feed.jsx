@@ -3,18 +3,19 @@ import Nav from "../components/Nav";
 
 const FAVORITES_KEY = "connectkingston_favorites_v1";
 
-
-    /*id: "4",
-    title: "Event Support Volunteer",
-    org: "Kingston Arts Council",
-    location: "City Hall",
-    commitment: "One-time / flexible",
-    tags: ["Events", "Arts", "Community"],
-    description:
-      "Help with check-in, guiding attendees, and setup/teardown at local events.",*/
+/*id: "4",
+title: "Event Support Volunteer",
+org: "Kingston Arts Council",
+location: "City Hall",
+commitment: "One-time / flexible",
+tags: ["Events", "Arts", "Community"],
+description:
+  "Help with check-in, guiding attendees, and setup/teardown at local events.",*/
 
 async function fetchOpportunities() {
-  const res = await fetch(`http://localhost:8000/opportunities/unmatched?limit=${50}`);
+  const res = await fetch(
+    `${import.meta.env.VITE_BACKEND_URL}/opportunities/unmatched?limit=${50}`
+  );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   return data.items;
@@ -102,7 +103,7 @@ export default function Feed() {
         o.organization,
         o.description,
         o.raw?.availability,
-        o.raw?.group,         // nice for Providence Care sections
+        o.raw?.group, // nice for Providence Care sections
         o.source,
       ]
         .filter(Boolean)
@@ -210,16 +211,16 @@ export default function Feed() {
             {filtered.map((opp) => {
               const id = opp._id || opp.source_id; // _id is string from your pipeline
               return (
-              <OpportunityCard
-                key={id}
-                opp={opp}
-                isFavorited={favorites.has(id)}
-                onToggleFavorite={() => toggleFavorite(id)}
-                onClick={() => {
-                  console.log("Clicked opportunity", id);
-                }}
-              />
-            );
+                <OpportunityCard
+                  key={id}
+                  opp={opp}
+                  isFavorited={favorites.has(id)}
+                  onToggleFavorite={() => toggleFavorite(id)}
+                  onClick={() => {
+                    console.log("Clicked opportunity", id);
+                  }}
+                />
+              );
             })}
           </div>
         )}
@@ -238,7 +239,8 @@ function OpportunityCard({ opp, onClick, isFavorited, onToggleFavorite }) {
   return (
     <div
       className="group relative cursor-pointer rounded-3xl border border-slate-200 bg-white p-6 shadow-sm
-                 transition hover:-translate-y-1 hover:shadow-md"
+                 transition hover:-translate-y-1 hover:shadow-md
+                 flex h-full flex-col"
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -246,63 +248,100 @@ function OpportunityCard({ opp, onClick, isFavorited, onToggleFavorite }) {
         if (e.key === "Enter") onClick?.();
       }}
     >
-      {/* Favorite button (top-right) */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleFavorite?.();
-        }}
-        className="absolute right-4 top-4 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm
-                   shadow-sm hover:bg-slate-50 transition"
-        aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-        title={isFavorited ? "Remove from favorites" : "Add to favorites"}
-      >
-        <span className={isFavorited ? "text-yellow-400" : "text-slate-400"}>
-          {isFavorited ? "★" : "☆"}
-        </span>
-      </button>
+      {/* TOP-RIGHT CONTROLS */}
+      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+        {/* Availability badge: icon-button + hover overlay (no layout shift) */}
+        <span className="relative group/badge">
+          {/* Collapsed circle icon button */}
+          <span
+            className="
+              inline-flex h-9 w-9 items-center justify-center
+              rounded-full border border-slate-200 bg-white
+              shadow-sm transition
+              group-hover/badge:bg-slate-50
+            "
+            aria-hidden="true"
+          >
+            <span className="text-base leading-none">🗓️</span>
+          </span>
 
-      <div className="flex items-start justify-between gap-3 pr-10">
+          {/* Expanded overlay */}
+          <span
+            className="
+              pointer-events-none absolute right-0 top-0 z-20
+              origin-top-right
+              rounded-2xl bg-white px-3 py-2
+              text-[11px] font-semibold text-indigo-700 leading-tight
+              shadow-md ring-1 ring-slate-200
+
+              opacity-0 scale-95 translate-y-1
+              transition duration-300 ease-out
+              group-hover/badge:opacity-100
+              group-hover/badge:scale-100
+              group-hover/badge:translate-y-0
+            "
+            style={{ width: "max-content", maxWidth: 240 }}
+          >
+            <span className="inline-flex items-start gap-2">
+              <span className="text-base leading-none mt-[1px]">🗓️</span>
+              <span className="whitespace-normal break-words">
+                {availability || "Flexible"}
+              </span>
+            </span>
+          </span>
+        </span>
+
+        {/* Favorite button - circle icon button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite?.();
+          }}
+          className="
+            inline-flex h-9 w-9 items-center justify-center
+            rounded-full border border-slate-200 bg-white
+            shadow-sm transition
+            hover:bg-slate-50 active:scale-95
+          "
+          aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+          title={isFavorited ? "Remove from favorites" : "Add to favorites"}
+        >
+          <span className="text-base leading-none">
+            {isFavorited ? "❤️" : "🤍"}
+          </span>
+        </button>
+      </div>
+
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 pr-24">
         <div>
           <h2 className="text-lg font-bold text-slate-900">{title}</h2>
           <p className="mt-1 text-sm text-slate-600">{org}</p>
         </div>
-
-        {/* Use availability (if present) like your old "commitment" pill */}
-        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-          {availability || "Flexible"}
-        </span>
       </div>
 
-      <p className="mt-3 text-sm text-slate-600 line-clamp-3">
-        {desc}
+      {/* Description grows to fill leftover space (within row-equal card heights) */}
+      <p className="mt-3 text-sm text-slate-600 flex-1">
+        <span className="line-clamp-3 sm:line-clamp-4">{desc}</span>
       </p>
 
-      {/* Optional: show Providence Care group header if you save it in raw.group */}
-      {opp?.raw?.group && (
-        <div className="mt-4">
-          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700">
-            {opp.raw.group}
-          </span>
-        </div>
-      )}
-
+      {/* Bottom row pinned to bottom */}
       <div className="mt-5 flex items-center justify-between text-sm text-slate-600">
         <span className="inline-flex items-center gap-2">
           <span className="text-slate-400">🔗</span>
           {opp?.source || "source"}
         </span>
 
-      <a
+        <a
           href={applyUrl}
           target="_blank"
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
         >
-        <span className="font-semibold text-indigo-700 group-hover:text-indigo-600">
-          View →
-        </span>
+          <span className="font-semibold text-indigo-700 group-hover:text-indigo-600">
+            View ➜
+          </span>
         </a>
       </div>
     </div>

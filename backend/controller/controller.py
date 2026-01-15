@@ -7,13 +7,18 @@ def default_msg():
 
 #GET USER BY FIREBASE ID
 def get_user_by_id(uid:str):
-    result=user_collection.find_one({"user_id":uid})
+    print("UID RECEIVED:", uid)
+    print("DB NAME:", user_collection.database.name)
+    print("COLLECTION NAME:", user_collection.name)
+    result=user_collection.find_one({"user_id":uid.strip()})
+    
+    print("QUERY RESULT:", result)
     if(result):
         result['_id']=str(result['_id'])
         return result
     else:
         return "User not exist"
-# ---------------- CREATE USER ----------------
+# CREATE USER 
 def create_user(user: User):
     try:
         # Check if user already exists

@@ -1,9 +1,17 @@
 from fastapi import FastAPI
+from routes.routes import router
+from database.opportunity import ensure_opportunity_indexes
 from fastapi.middleware.cors import CORSMiddleware
 from routes.routes import router
 
 app = FastAPI()
+app = FastAPI()
 app.include_router(router)
+
+@app.on_event("startup")
+def startup_event():
+    ensure_opportunity_indexes()
+
 
 origins = [
     "http://localhost:5173",

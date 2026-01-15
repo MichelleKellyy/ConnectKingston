@@ -23,6 +23,9 @@ class Profile(BaseModel):
     )
 
 class User(BaseModel):
+    user_id:str # this user id is UID that we will be getting fro firebase
+    email:str
+    profile:Profile
     user_id: str = Field(..., description="Firebase UID")
     email: EmailStr = Field(..., description="User email")
     profile: Profile

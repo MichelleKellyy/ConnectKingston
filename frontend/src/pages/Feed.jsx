@@ -3,6 +3,8 @@ import Nav from "../components/Nav";
 
 const FAVORITES_KEY = "connectkingston_favorites_v1";
 import bg from "../assets/img2.jpg";
+import { auth } from "../firebase/firebase.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 /*id: "4",
 title: "Event Support Volunteer",
@@ -37,11 +39,13 @@ function saveFavorites(favSet) {
   localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favSet]));
 }
 
+
+
 export default function Feed() {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const { user, loading: authLoading } = useAuth();
   const [query, setQuery] = useState("");
 
   // favorites are a Set of ids for fast lookups
@@ -51,6 +55,8 @@ export default function Feed() {
   // - matched: you will plug your AI matching output into `matchedOpportunities`
   // - unmatched: shows ALL opportunities (your request)
   const [feedView, setFeedView] = useState("matched"); // "matched" | "all"
+  const [matchedIds, setMatchedIds] = useState([]);
+  const [matching, setMatching] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -75,23 +81,42 @@ export default function Feed() {
     };
   }, []);
 
-  // ✅ PLACEHOLDER: This is where your AI matched list goes.
-  // Option A (IDs): const matchedIds = new Set([...])
-  // Option B (objects): const matchedOpportunities = [...]
-  //
-  // Right now it returns an empty array so "matched" feed shows none until you wire it.
+  async function fetchMatches(userId) {
+    setMatching(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/match/${userId}`);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json(); // data is your backend JSON
+      console.log("Match response:", data);
+
+      // If your backend returns `matches` array
+      setMatchedIds(data.matches || []);
+
+    } catch (e) {
+      console.error("Fetching matches failed:", e);
+    } finally {
+      setMatching(false);
+    }
+  }
+
+
   const matchedOpportunities = useMemo(() => {
-    // TODO: replace this with your AI output
-    // Example using IDs:
-    // const matchedIds = new Set(["1","3"]);
-    // return opportunities.filter(o => matchedIds.has(o.id));
-    return [];
-  }, [opportunities]);
+    if (!matchedIds || matchedIds.length === 0) return [];
+
+    const matchedSet = new Set(matchedIds); // for fast lookup
+    return opportunities.filter((opp) => matchedSet.has(opp._id));
+  }, [opportunities, matchedIds]);
 
   // base list depends on feedView
   const baseList = useMemo(() => {
     return feedView === "matched" ? matchedOpportunities : opportunities;
   }, [feedView, matchedOpportunities, opportunities]);
+  console.log("matchedIds:", matchedIds);
+  console.log("matchedOpportunities:", matchedOpportunities);
+
+
 
   // apply search on top of whichever list is active
   const filtered = useMemo(() => {
@@ -165,13 +190,29 @@ export default function Feed() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setFeedView((v) => (v === "matched" ? "all" : "matched"))
-                  }
-                  className="h-[50px] whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-4 font-semibold
-                           text-slate-800 shadow-sm hover:bg-slate-50 transition active:scale-[0.98]"
+                  disabled={authLoading || matching} // disable while auth or matching
+                  onClick={() => {
+                    setFeedView((v) => {
+                      const next = v === "matched" ? "all" : "matched";
+
+                      // fetch matches only if switching to "matched" and we haven't fetched yet
+                      if (next === "matched" && matchedIds.length === 0) {
+                        if (!user) {
+                          console.warn("User not logged in yet");
+                          return v; // stay on current view
+                        }
+
+                        fetchMatches(user.uid);
+                      }
+
+                      return next;
+                    });
+                  }}
+                  className={`h-[50px] whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-4 font-semibold
+              text-slate-800 shadow-sm hover:bg-slate-50 transition active:scale-[0.98]
+              ${authLoading || matching ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  {feedView === "matched" ? "Show all" : "Show matched"}
+                  {matching ? "Matching…" : feedView === "matched" ? "Show all" : "Show matched"}
                 </button>
               </div>
 

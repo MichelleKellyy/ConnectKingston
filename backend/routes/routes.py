@@ -128,6 +128,7 @@ async def get_matches(user_id: str):
         try:
             opp_obj = opportunity_collection.find_one({"_id": ObjectId(_id)})
             if opp_obj:
+                opp_obj["_id"] = str(opp_obj["_id"])
                 matched_opps.append(opp_obj)
         except Exception:
             continue  # skip invalid _id
@@ -136,5 +137,5 @@ async def get_matches(user_id: str):
     return {
         "user_id": user_id,
         "raw_llm_output": matched_ids_raw,  # keep the raw output for storage/debugging
-        "matches": str(matched_opps)
+        "matches": matched_opps
     }

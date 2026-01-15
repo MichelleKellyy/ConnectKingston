@@ -8,6 +8,33 @@ from ..utils import make_source_id_from_url, normalize_url
 SOURCE = "cityofkingston"
 LIST_URL = "https://www.cityofkingston.ca/careers-and-volunteering/volunteering/"
 
+FILLED_PHRASES = (
+    "this volunteer position is currently filled",
+    "position is currently filled",
+    "currently filled",
+    "no longer available",
+    "this opportunity is closed",
+)
+
+def is_filled_opportunity(detail_url: str) -> bool:
+    """
+    Fetch the detail page and detect a 'filled/closed' banner/message.
+    Returns True if it's filled/closed, else False.
+    """
+    try:
+        html = fetch_text(detail_url)
+    except Exception:
+        #Fail-open
+        return False
+
+    soup = BeautifulSoup(html, "lxml")
+
+    # 1) Target the common alert box container if present
+    alert = soup.select_one("section.kingston-alert-box")
+    if alert:
+        text = alert.get_text(" ", strip=True).lower()
+        return any(p in text for p in FILLED_PHRASES)
+
 
 def scrape_city_of_kingston_volunteering() -> List[Dict[str, Any]]:
     html = fetch_text(LIST_URL)
@@ -20,12 +47,9 @@ def scrape_city_of_kingston_volunteering() -> List[Dict[str, Any]]:
     if not heading:
         return []
 
-    # 1) Find the section container that holds the cards
-    # We'll walk upward a bit to a reasonable container, then search within it.
     section = heading
     for _ in range(4):
         if section and section.name in ("section", "div", "main"):
-            # heuristic: stop if this container contains at least one title element
             if section.select_one("p.heading.sm.c3-heading"):
                 break
         section = section.parent
@@ -33,8 +57,6 @@ def scrape_city_of_kingston_volunteering() -> List[Dict[str, Any]]:
     if not section:
         return []
 
-    # 2) Each opportunity card should contain a title element.
-    # We'll treat the closest repeated parent of that title as the "card".
     title_nodes = section.select("p.heading.sm.c3-heading")
     if not title_nodes:
         return []
@@ -42,32 +64,28 @@ def scrape_city_of_kingston_volunteering() -> List[Dict[str, Any]]:
     docs: List[Dict[str, Any]] = []
 
     for title_node in title_nodes:
-        # Find a reasonable card container by climbing up from the title.
         card = title_node
         for _ in range(6):
             if card.name in ("article", "li", "div", "section"):
-                # If this container also has a link, it's a good candidate
                 if card.select_one("a[href]"):
                     break
             card = card.parent
 
-        # Extract title text
         title = title_node.get_text(" ", strip=True)
 
-        # Extract description (teaser) text
         desc = None
         desc_node = card.select_one("div.text.c3-text") if card else None
         if desc_node:
             desc = desc_node.get_text(" ", strip=True)
 
-        # Extract the best URL (apply_url)
         apply_url = None
         link = card.select_one("a[href]") if card else None
         if link and link.get("href"):
             apply_url = normalize_url(urljoin(LIST_URL, link.get("href").strip()))
-
-        # If no URL, skip (because source_id depends on URL)
         if not apply_url:
+            continue
+
+        if is_filled_opportunity(apply_url):
             continue
 
         doc: Dict[str, Any] = {
@@ -92,7 +110,6 @@ def scrape_city_of_kingston_volunteering() -> List[Dict[str, Any]]:
         }
         docs.append(doc)
 
-    # 3) De-dupe in-run
     unique: dict[tuple[str, str], Dict[str, Any]] = {}
     for d in docs:
         unique[(d["source"], d["source_id"])] = d

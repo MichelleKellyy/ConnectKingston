@@ -1,6 +1,6 @@
 from pymongo import ASCENDING
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Iterable
 
 from database.mongo import opportunity_collection as opportunities
 
@@ -27,3 +27,19 @@ def list_opportunities(limit: int = 100) -> list[dict]:
         {"$addFields": {"_id": {"$toString": "$_id"}}},
     ]
     return list(opportunities.aggregate(pipeline))
+
+def delete_missing_for_source(source: str, seen_source_ids: Iterable[str]) -> int:
+    """
+    Delete any docs for `source` whose source_id was NOT seen in this ingest run.
+    Returns number deleted.
+    """
+    seen = list(seen_source_ids)
+    query = {"source": source}
+
+    # If seen is empty, this would delete all for the source.
+    # We usually guard against this at the ingest level.
+    if seen:
+        query["source_id"] = {"$nin": seen}
+
+    res = opportunities.delete_many(query)
+    return res.deleted_count

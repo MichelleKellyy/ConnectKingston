@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Nav from "../components/Nav";
-import bg from "../assets/img2.jpg"; // ✅ ADDED (use the same image as your Feed)
+import bg from "../assets/img2.jpg";
 
-const FAVORITES_KEY = "connectkingston_favorites_v1";
-
-// Same mock + fetch as Feed for now.
-// Later: use your API or share a fetch function between pages.
 const MOCK_OPPORTUNITIES = [
   {
     id: "1",
@@ -54,26 +50,13 @@ async function fetchOpportunities() {
   return MOCK_OPPORTUNITIES;
 }
 
-function loadFavorites() {
-  try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(parsed) ? parsed : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function saveFavorites(favSet) {
-  localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favSet]));
-}
 
 export default function Favorites() {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [favorites, setFavorites] = useState(() => loadFavorites());
+  const [favorites, setFavorites] = useState(new Set());
 
   useEffect(() => {
     let ignore = false;
@@ -105,7 +88,6 @@ export default function Favorites() {
     setFavorites((prev) => {
       const next = new Set(prev);
       next.delete(id);
-      saveFavorites(next);
       return next;
     });
   }

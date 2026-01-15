@@ -49,7 +49,7 @@ export default function Feed() {
   const [query, setQuery] = useState("");
 
   // favorites are a Set of ids for fast lookups
-  const [favorites, setFavorites] = useState(() => loadFavorites());
+  const [favorites, setFavorites] = useState(new Set());
 
   // NEW: toggle between "matched" feed and "all/unmatched" feed
   // - matched: you will plug your AI matching output into `matchedOpportunities`

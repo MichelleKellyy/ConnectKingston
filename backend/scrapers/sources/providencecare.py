@@ -3,15 +3,10 @@ from typing import Any, Dict, List
 import hashlib
 
 from ..http import fetch_text
-from ..utils import normalize_url
+from ..utils import normalize_url, _make_source_id
 
 SOURCE = "providencecare"
 PAGE_URL = "https://providencecare.ca/careers-volunteering/volunteer/"
-
-def _make_source_id(page_url: str, role_title: str) -> str:
-    base = normalize_url(page_url)
-    key = f"{base}::{role_title.strip().lower()}"
-    return hashlib.sha1(key.encode("utf-8")).hexdigest()
 
 def _is_header_row(tr) -> bool:
     # If the row has <th>, it's a header row

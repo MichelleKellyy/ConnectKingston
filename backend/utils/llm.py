@@ -5,7 +5,7 @@ import re
 import ast
 co = cohere.ClientV2(os.getenv("COHERE_LLM_API"))
 
-async def match_with_llm_ids(profile, opportunities):
+def match_with_llm_ids(profile, opportunities):
     prompt = f"""
 You are a volunteer matching assistant. You must be HIGHLY SELECTIVE and only match opportunities that truly fit the user's profile.
 

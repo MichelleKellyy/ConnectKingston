@@ -1,28 +1,48 @@
-from database.mongo import favourites_opportunities
+from database.mongo import favourites_opportunities, opportunity_collection
 from datetime import datetime
 from model.model import Favorite
 from bson import ObjectId
+from fastapi import HTTPException
 
-async def save_favorite(fav: Favorite):
+def save_favorite(fav: Favorite):
     doc = {
         "email": fav.email,
         "opportunity_id": ObjectId(fav.opportunity_id),
         "created_at": datetime.utcnow(),
     }
-    await favourites_opportunities.update_one(
+    favourites_opportunities.update_one(
         {"user_id": fav.user_id, "opportunity_id": ObjectId(fav.opportunity_id)},
         {"$set": doc},
         upsert=True
     )
     return {"status": "ok"}
 
-async def get_user_favorites(user_id: str):
+def get_user_favorites(user_id: str):
     cursor = favourites_opportunities.find({"user_id": user_id})
     favorites = []
-    async for doc in cursor:
+    for doc in cursor:
         favorites.append({
             "opportunity_id": str(doc["opportunity_id"]),  # convert ObjectId to string
             "saved_at": doc["created_at"],
         })
     return favorites
 
+def get_opportunity(opportunity_id: str):
+    try:
+        # Convert string ID to ObjectId
+        obj_id = ObjectId(opportunity_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid opportunity ID")
+
+    # Fetch opportunity from MongoDB
+    opp = opportunity_collection.find_one({"_id": obj_id})
+    if not opp:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+
+    # Convert ObjectId to string for frontend use
+    opp["_id"] = str(opp["_id"])
+
+    # Optional: Remove any internal fields that frontend doesn't need
+    # e.g., opp.pop("_internal_field", None)
+
+    return opp

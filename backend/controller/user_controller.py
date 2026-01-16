@@ -1,6 +1,8 @@
 from model.model import User
 from database.mongo import user_collection
 from fastapi import HTTPException
+
+
 def default_msg():
     return "Welcome to backend"
 

@@ -1,13 +1,16 @@
-import controller.controller as helper
+import controller.user_controller as helper
 from fastapi import APIRouter, Path, Query, HTTPException
-from model.model import User
-from database.mongo import user_collection, opportunity_collection
+from typing import List
+from model.model import User, Favorite
+from database.mongo import user_collection, opportunity_collection, favourites_opportunities
 from controller.opportunity_controller import ingest_source, ingest_all
 from scrapers.registry import list_sources
 from database.opportunity import list_opportunities
 from utils.llm import match_with_llm_ids
 from bson import ObjectId
 import re
+from datetime import datetime
+
 router = APIRouter()
 
 # ---------------- GET default message ----------------
@@ -140,3 +143,40 @@ async def get_matches(user_id: str):
         "raw_llm_output": matched_ids_raw,  # keep the raw output for storage/debugging
         "matches": matched_opps
     }
+
+
+# Route to save a favorite
+@router.post("/add_favorites", response_model=dict)
+async def add_favorite(fav: Favorite):
+    try:
+        # Convert opportunity_id to ObjectId inside the function
+        doc = {
+            "email": fav.email,
+            "opportunity": ObjectId(fav.opportunity_id),
+            "user_id": fav.user_id,
+            "created_at": datetime.utcnow(),
+        }
+        await favourites_opportunities.update_one(
+            {"user_id": fav.user_id, "opportunity": ObjectId(fav.opportunity_id)},
+            {"$set": doc},
+            upsert=True
+        )
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# Route to get all favorites for a user
+@router.get("/favorite/{user_id}", response_model=List[dict])
+async def get_favorites(user_id: str):
+    try:
+        cursor = favourites_opportunities.find({"user_id": user_id})
+        favorites = []
+        async for doc in cursor:
+            favorites.append({
+                "opportunity": str(doc["opportunity"]),  # ObjectId -> string
+                "saved_at": doc["created_at"],
+            })
+        return favorites
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

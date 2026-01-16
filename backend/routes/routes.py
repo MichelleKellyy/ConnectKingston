@@ -144,41 +144,40 @@ def get_matches(user_id: str):
     }
 
 # Route to save a favorite
-@router.post("/add_favorites", response_model=dict)
+@router.post("/add_favorites")
 def add_favorite(fav: Favorite):
     try:
-        # Convert opportunity_id to ObjectId inside the function
-        doc = {
-            "email": fav.email,
-            "opportunity": ObjectId(fav.opportunity_id),
-            "user_id": fav.user_id,
-            "created_at": datetime.utcnow(),
-        }
-        favourites_opportunities.update_one(
-            {"user_id": fav.user_id, "opportunity": ObjectId(fav.opportunity_id)},
-            {"$set": doc},
-            upsert=True #if opportunity not exist then it will insert
-        )
-        return {"status": "ok"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        opp_id = ObjectId(fav.opportunity_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid opportunity id")
 
+    # make sure the opportunity actually exists
+    if not opportunity_collection.find_one({"_id": opp_id}):
+        raise HTTPException(status_code=404, detail="Opportunity not found")
 
+    doc = {
+        "email": fav.email,
+        "user_id": fav.user_id,
+        "opportunity": opp_id,
+        "created_at": datetime.utcnow(),
+    }
+
+    favourites_opportunities.update_one(
+        {"user_id": fav.user_id, "opportunity": opp_id},
+        {"$set": doc},
+        upsert=True
+    )
+    return {"status": "ok"}
+
+    
 # Route to get all favorites for a user
 @router.get("/favorites/{user_id}", response_model=List[dict])
 def get_favorites(user_id: str):
     try:
-        cursor = favourites_opportunities.find({"user_id": user_id})
-        favorites = []
-        for doc in cursor:
-            favorites.append({
-                "opportunity": str(doc["opportunity"]),  # ObjectId -> string
-                "saved_at": doc["created_at"],
-            })
-        return favorites
+        return favops.get_user_favorites(user_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-#getting the opportunities
+
 
 @router.get("/getOpportunity/{opportunity_id}", response_model=dict)
 def getOppor(opportunity_id:str):

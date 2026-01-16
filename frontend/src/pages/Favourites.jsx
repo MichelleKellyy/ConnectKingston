@@ -2,32 +2,12 @@ import { useEffect, useState } from "react";
 import Nav from "../components/Nav";
 import bg from "../assets/img2.jpg";
 
-// Fetch favorite IDs for a user
-async function fetchFavoriteIds(userId) {
+// Fetch all favorite opportunities (backend now returns full objects)
+async function fetchLikedOpportunities(userId) {
   const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/favorites/${userId}`);
   if (!res.ok) throw new Error("Failed to fetch favorites");
-  return res.json(); // [{ opportunity: "id", saved_at: ... }]
+  return res.json(); // Backend returns full opportunity objects directly
 }
-
-// Fetch full opportunity details by ID
-async function fetchOpportunityById(id) {
-  const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/getOpportunity/${id}`);
-  console.log("Fetching opportunity ID:", id, res.status);
-  if (!res.ok) throw new Error("Failed to fetch opportunity");
-  return res.json();
-}
-
-
-// Fetch all liked opportunities
-async function fetchLikedOpportunities(userId) {
-  const favIds = await fetchFavoriteIds(userId);
-  console.log("Fetched favorites IDs:", favIds); // DEBUG
-  const opps = await Promise.all(
-    favIds.map((fav) => fetchOpportunityById(fav.opportunity)) // backend must return {opportunity: "id"}
-  );
-  return opps;
-}
-
 
 // Remove favorite from backend
 async function removeFavoriteBackend(userId, opportunityId) {
@@ -52,7 +32,7 @@ export default function Favorites({ userId }) {
       setLoading(true);
       setError("");
       try {
-        const opps = await fetchLikedOpportunities(userId); // fetch dynamic favorites
+        const opps = await fetchLikedOpportunities(userId);
         if (!ignore) setOpportunities(opps);
       } catch (err) {
         if (!ignore) setError(err.message || "Something went wrong.");
@@ -101,7 +81,7 @@ export default function Favorites({ userId }) {
 
           {!loading && error && (
             <div className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700">
-              <p className="font-semibold">Couldn’t load favorites</p>
+              <p className="font-semibold">Couldn't load favorites</p>
               <p className="mt-1 text-sm">{error}</p>
             </div>
           )}
@@ -168,7 +148,7 @@ function FavoriteCard({ opp, onRemove }) {
       <div className="mt-5 flex items-center justify-between text-sm text-slate-600">
         <span className="inline-flex items-center gap-2">
           <span className="text-slate-400">📍</span>
-          {opp.location || "Unknown"}
+          {opp.location_text || opp.location || "Unknown"}
         </span>
 
         <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">

@@ -9,8 +9,8 @@ import { useAuth } from "../context/AuthContext.jsx";
 async function fetchFavorites(userId) {
   const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/favorites/${userId}`);
   if (!res.ok) throw new Error("Failed to fetch favorites");
-  const data = await res.json(); // returns [{ opportunity: "id", saved_at: ... }]
-  return new Set(data.map(f => f.opportunity));
+  const data = await res.json(); // now returns full opportunity objects with _id
+  return new Set(data.map(f => f._id)); // ✅ use f._id instead of f.opportunity
 }
 
 async function fetchOpportunities() {

@@ -6,15 +6,6 @@ import bg from "../assets/img2.jpg";
 import { auth } from "../firebase/firebase.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
-/*id: "4",
-title: "Event Support Volunteer",
-org: "Kingston Arts Council",
-location: "City Hall",
-commitment: "One-time / flexible",
-tags: ["Events", "Arts", "Community"],
-description:
-  "Help with check-in, guiding attendees, and setup/teardown at local events.",*/
-
 async function fetchOpportunities() {
   const res = await fetch(
     `${import.meta.env.VITE_BACKEND_URL}/opportunities/unmatched?limit=${50}`
@@ -24,7 +15,6 @@ async function fetchOpportunities() {
   return data.items;
 }
 
-// LocalStorage helpers
 function loadFavorites() {
   try {
     const raw = localStorage.getItem(FAVORITES_KEY);
@@ -48,13 +38,9 @@ export default function Feed() {
   const { user, loading: authLoading } = useAuth();
   const [query, setQuery] = useState("");
 
-  // favorites are a Set of ids for fast lookups
   const [favorites, setFavorites] = useState(new Set());
 
-  // NEW: toggle between "matched" feed and "all/unmatched" feed
-  // - matched: you will plug your AI matching output into `matchedOpportunities`
-  // - unmatched: shows ALL opportunities (your request)
-  const [feedView, setFeedView] = useState("matched"); // "matched" | "all"
+  const [feedView, setFeedView] = useState("all"); // "matched" | "all"
   const [matchedIds, setMatchedIds] = useState([]);
   const [matching, setMatching] = useState(false);
 
@@ -301,7 +287,7 @@ function OpportunityCard({ opp, onClick, isFavorited, onToggleFavorite }) {
     >
       {/* TOP-RIGHT CONTROLS */}
       <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
-        {/* Availability badge: icon-button + hover overlay (no layout shift) */}
+        {/* Availability badge*/}
         <span className="relative group/badge">
           {/* Collapsed circle icon button */}
           <span

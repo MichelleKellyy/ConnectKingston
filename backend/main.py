@@ -2,25 +2,21 @@ from fastapi import FastAPI
 from routes.routes import router
 from database.opportunity import ensure_opportunity_indexes
 from fastapi.middleware.cors import CORSMiddleware
-from routes.routes import router
 
 app = FastAPI()
-app = FastAPI()
-app.include_router(router)
+
+# Add CORS middleware BEFORE including routes
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 def startup_event():
     ensure_opportunity_indexes()
 
-
-origins = [
-    "http://localhost:5173/",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,   
-    allow_credentials=True,
-    allow_methods=[""],
-    allow_headers=[""],
-)
+# Include router AFTER middleware
+app.include_router(router)

@@ -1,5 +1,12 @@
 # ConnectKingston
-Built for King Hacks 2026: An AI-powered matching platform that helps Kingston residents discover meaningful volunteer opportunities tailored to their interests and skills.
+Built for King Hacks 2026 — a platform that helps Kingston residents discover and match with local volunteer opportunities.
+
+## Problem, Solution, and Intended Impact
+**Problem:** Volunteer opportunities in Kingston are scattered across many different websites and social channels, making them hard to find and overwhelming to navigate for those wanting to get involved. Existing centralized platforms are limited, meaning residents often miss opportunities that match their interests, availability, and skills.
+
+**Solution:** ConnectKingston is an AI-powered matching platform that brings Kingston volunteer opportunities into one place. Users create a quick profile and are instantly recommended the most relevant opportunities based on their interests, skills and availability.
+
+**Intended Impact:** By reducing the friction of searching, ConnectKingston makes volunteering more accessible and personalized. This will increase participation, strengthen community connections, and help local organizations reach the right volunteers faster. ConnectKingston helps residents get involved and contribute meaningfully where they’re needed most.
 
 ## Repository Structure
 ```text

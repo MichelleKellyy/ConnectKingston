@@ -8,7 +8,7 @@ app = FastAPI()
 # Add CORS middleware BEFORE including routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://connectkingston.onrender.com"],
+    allow_origins=["https://connectkingston.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

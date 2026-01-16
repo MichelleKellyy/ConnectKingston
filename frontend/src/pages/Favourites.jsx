@@ -1,104 +1,65 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Nav from "../components/Nav";
 import bg from "../assets/img2.jpg";
 
-const MOCK_OPPORTUNITIES = [
-  {
-    id: "1",
-    title: "Community Cleanup Volunteer",
-    org: "Kingston Green Team",
-    location: "Downtown Kingston",
-    commitment: "2–4 hrs/week",
-    tags: ["Environment", "Outdoors", "Community"],
-    description:
-      "Help keep Kingston beautiful by joining weekend cleanups and community events.",
-  },
-  {
-    id: "2",
-    title: "Food Bank Sorting Helper",
-    org: "Kingston Food Bank",
-    location: "East End",
-    commitment: "1–2 hrs/week",
-    tags: ["Food", "Community", "Support"],
-    description:
-      "Assist with sorting donations and preparing food hampers for local families.",
-  },
-  {
-    id: "3",
-    title: "Youth Coding Mentor",
-    org: "Tech for Youth",
-    location: "Hybrid",
-    commitment: "5–10 hrs/month",
-    tags: ["Youth", "Tech", "Mentorship"],
-    description:
-      "Mentor students during coding club sessions. Beginners welcome—training provided.",
-  },
-  {
-    id: "4",
-    title: "Event Support Volunteer",
-    org: "Kingston Arts Council",
-    location: "City Hall",
-    commitment: "One-time / flexible",
-    tags: ["Events", "Arts", "Community"],
-    description:
-      "Help with check-in, guiding attendees, and setup/teardown at local events.",
-  },
-];
-
-async function fetchOpportunities() {
-  await new Promise((r) => setTimeout(r, 200));
-  return MOCK_OPPORTUNITIES;
+// Fetch favorite IDs for a user
+async function fetchFavoriteIds(userId) {
+  const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/favorite/${userId}`);
+  if (!res.ok) throw new Error("Failed to fetch favorites");
+  return res.json(); // [{ opportunity: "id", saved_at: ... }]
 }
 
+// Fetch full opportunity details by ID
+async function fetchOpportunityById(id) {
+  const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/getOpportunity/${id}`);
+  if (!res.ok) throw new Error("Failed to fetch opportunity");
+  return res.json();
+}
 
-export default function Favorites() {
+// Fetch all liked opportunities
+async function fetchLikedOpportunities(userId) {
+  const favIds = await fetchFavoriteIds(userId);
+  const opps = await Promise.all(
+    favIds.map((fav) => fetchOpportunityById(fav.opportunity))
+  );
+  return opps;
+}
+
+export default function Favorites({ userId }) {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [favorites, setFavorites] = useState(new Set());
-
   useEffect(() => {
     let ignore = false;
 
-    async function load() {
+    async function loadFavorites() {
       setLoading(true);
       setError("");
       try {
-        const data = await fetchOpportunities();
-        if (!ignore) setOpportunities(Array.isArray(data) ? data : []);
+        const opps = await fetchLikedOpportunities(userId); // fetch dynamic favorites
+        if (!ignore) setOpportunities(opps);
       } catch (err) {
-        if (!ignore) setError(err?.message || "Something went wrong.");
+        if (!ignore) setError(err.message || "Something went wrong.");
       } finally {
         if (!ignore) setLoading(false);
       }
     }
 
-    load();
-    return () => {
-      ignore = true;
-    };
-  }, []);
+    loadFavorites();
+    return () => { ignore = true; };
+  }, [userId]);
 
-  const favoritedOpps = useMemo(() => {
-    return opportunities.filter((o) => favorites.has(o.id));
-  }, [opportunities, favorites]);
-
+  // Remove a favorite dynamically
   function removeFavorite(id) {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
+    setOpportunities((prev) => prev.filter((o) => o._id !== id));
   }
 
   return (
-    // background image wrapper
     <div
       className="min-h-screen bg-fixed bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${bg})` }}
     >
-      {/* overlay layer */}
       <div className="min-h-screen bg-slate-100/80 backdrop-blur-sm text-slate-900">
         <Nav />
 
@@ -124,7 +85,7 @@ export default function Favorites() {
             </div>
           )}
 
-          {!loading && !error && favoritedOpps.length === 0 && (
+          {!loading && !error && opportunities.length === 0 && (
             <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
               <p className="font-semibold text-slate-900">No favorites yet</p>
               <p className="mt-1 text-sm text-slate-600">
@@ -133,13 +94,13 @@ export default function Favorites() {
             </div>
           )}
 
-          {!loading && !error && favoritedOpps.length > 0 && (
+          {!loading && !error && opportunities.length > 0 && (
             <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {favoritedOpps.map((opp) => (
+              {opportunities.map((opp) => (
                 <FavoriteCard
-                  key={opp.id}
+                  key={opp._id}
                   opp={opp}
-                  onRemove={() => removeFavorite(opp.id)}
+                  onRemove={() => removeFavorite(opp._id)}
                 />
               ))}
             </div>
@@ -150,6 +111,7 @@ export default function Favorites() {
   );
 }
 
+// FavoriteCard component (same layout and styles as before)
 function FavoriteCard({ opp, onRemove }) {
   return (
     <div className="relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

@@ -46,3 +46,14 @@ def get_opportunity(opportunity_id: str):
     # e.g., opp.pop("_internal_field", None)
 
     return opp
+
+def delete_opportunity_fav(opportunity_id: str):
+    if not ObjectId.is_valid(opportunity_id):
+        raise HTTPException(status_code=400, detail="Invalid opportunity ID")
+
+    result = favourites_opportunities.delete_one({"_id": ObjectId(opportunity_id)})
+
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Opportunity not found")
+
+    return {"status": "success", "message": f"Opportunity {opportunity_id} deleted"}

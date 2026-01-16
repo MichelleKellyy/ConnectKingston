@@ -165,7 +165,7 @@ def add_favorite(fav: Favorite):
 
 
 # Route to get all favorites for a user
-@router.get("/favorite/{user_id}", response_model=List[dict])
+@router.get("/favorites/{user_id}", response_model=List[dict])
 def get_favorites(user_id: str):
     try:
         cursor = favourites_opportunities.find({"user_id": user_id})
@@ -183,3 +183,8 @@ def get_favorites(user_id: str):
 @router.get("/getOpportunity/{opportunity_id}", response_model=dict)
 def getOppor(opportunity_id:str):
     return favops.get_opportunity(opportunity_id)
+
+#Added delete so to remove favorite opportunities
+@router.delete("/remove_favorite")
+def remove_favorite(data: dict):
+    return favops.delete_opportunity_fav(data["user_id"], data["opportunity_id"])

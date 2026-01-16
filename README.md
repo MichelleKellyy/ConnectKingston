@@ -32,16 +32,16 @@ CONNECTKINGSTON/                          # repo root
 │   ├── utils/
 │   │   └── llm.py                        # match_with_llm_ids(profile, opportunities)
 │   │
-│   ├── scrapers/                         # scraping + ingestion sources
-│   │   ├── __init__.py
-│   │   ├── http.py                       # HTTP fetching helpers
-│   │   ├── registry.py                   # list_sources() + source registry
-│   │   ├── utils.py                      # scraper utilities
-│   │   └── sources/                      # individual scraper implementations
-│   │       ├── __init__.py
-│   │       ├── cityofkingston.py
-│   │       ├── providencecare.py
-│   │       └── youthdiversion.py
+│   └── scrapers/                         # scraping + ingestion sources
+│       ├── __init__.py
+│       ├── http.py                       # HTTP fetching helpers
+│       ├── registry.py                   # list_sources() + source registry
+│       ├── utils.py                      # scraper utilities
+│       └── sources/                      # individual scraper implementations
+│           ├── __init__.py
+│           ├── cityofkingston.py
+│           ├── providencecare.py
+│           └── youthdiversion.py
 │
 ├── frontend/
 │   ├── public/

@@ -1,43 +1,75 @@
 # ConnectKingston
-Built for King Hacks 2026: An AI-powered matching platform that helps Kingston residents discover meaningful volunteer opportunities tailored to their interests and skills.
+Built for King Hacks 2026 | a platform that helps Kingston residents discover and match with local volunteer opportunities.
+
+## Problem, Solution, and Intended Impact
+**Problem:** Volunteer opportunities in Kingston are scattered across many different websites and social channels, making them hard to find and overwhelming to navigate for those wanting to get involved. Existing centralized platforms are limited, meaning residents often miss opportunities that match their interests, availability, and skills.
+
+**Solution:** ConnectKingston is an AI-powered matching platform that brings Kingston volunteer opportunities into one place. Users create a quick profile and are instantly recommended the most relevant opportunities based on their interests, skills and availability.
+
+**Intended Impact:** By reducing the friction of searching, ConnectKingston makes volunteering more accessible and personalized. This will increase participation, strengthen community connections, and help local organizations reach the right volunteers faster. ConnectKingston helps residents get involved and contribute meaningfully where they’re needed most.
 
 ## Repository Structure
 ```text
-backend/
-├── app/
-│   ├── main.py                     # FastAPI entry
+CONNECTKINGSTON/                          # repo root
+├── backend/
+│   ├── main.py                           # FastAPI app entry + CORS + startup indexes
 │   │
-│   ├── routes/                     # API endpoints
-│   │   ├── profile_routes.py       # /profile
-│   │   ├── opportunity_routes.py   # /opportunities
-│   │   ├── match_routes.py         # /match
-│   │   └── post_routes.py          # /post-opportunity
+│   ├── controller/                       # API business logic
+│   │   ├── favourites_controller.py      # favorites CRUD/helpers
+│   │   ├── opportunity_controller.py     # ingest_source(), ingest_all()
+│   │   └── user_controller.py            # create/update/delete/get + normalize_user(), default_msg()
 │   │
-│   ├── controllers/                # Business logic
-│   │   ├── profile_controller.py
-│   │   ├── opportunity_controller.py
-│   │   ├── match_controller.py     # Calls matcher + AI explanation
-│   │   └── post_controller.py      # Calls fraud flag AI
+│   ├── routes/
+│   │   └── routes.py                     # APIRouter: users, ingest, feed, match (LLM), favorites
 │   │
-│   ├── models/                     # Data schemas
-│   │   ├── user_model.py           # Volunteer profile
-│   │   ├── opportunity_model.py
-│   │   └── match_model.py
-│   │
-│   ├── services/                   # Core logic
-│   │   ├── matcher.py              # Rule-based scoring (NO AI)
-│   │   ├── ai_client.py            # Pre-trained LLM wrapper
-│   │   ├── explanation_service.py  # Match → AI explanation
-│   │   └── fraud_service.py        # Posting → AI flag
+│   ├── model/
+│   │   └── model.py                      # Pydantic models: User, Favorite
 │   │
 │   ├── database/
-│   │   ├── mongodb.py              # Mongo connection
-│   │   ├── user_repo.py            # User CRUD
-│   │   └── opportunity_repo.py     # Opportunity CRUD
+│   │   ├── mongo.py                      # Mongo connection + collections
+│   │   └── opportunity.py                # list_opportunities(), ensure_opportunity_indexes()
 │   │
-│   └── utils/
-│       └── scoring.py              # Skill, interest, location logic
+│   ├── utils/
+│   │   └── llm.py                        # match_with_llm_ids(profile, opportunities)
+│   │
+│   └── scrapers/                         # scraping + ingestion sources
+│       ├── __init__.py
+│       ├── http.py                       # HTTP fetching helpers
+│       ├── registry.py                   # list_sources() + source registry
+│       ├── utils.py                      # scraper utilities
+│       └── sources/                      # individual scraper implementations
+│           ├── __init__.py
+│           ├── cityofkingston.py
+│           ├── providencecare.py
+│           └── youthdiversion.py
 │
-├── requirements.txt
-└── .env
+├── frontend/
+│   ├── public/
+│   └── src/
+│       ├── assets/
+│       ├── components/
+│       │   ├── Footer.jsx
+│       │   ├── GuestRoute.jsx
+│       │   ├── Nav.jsx
+│       │   ├── ProfileEditor.jsx
+│       │   └── ProtectedRoute.jsx
+│       ├── context/
+│       │   └── AuthContext.jsx
+│       ├── firebase/
+│       │   └── firebase.jsx
+│       ├── pages/
+│       │   ├── Dashboard.jsx
+│       │   ├── Favourites.jsx
+│       │   ├── Feed.jsx
+│       │   ├── Home.jsx
+│       │   ├── SignIn.jsx
+│       │   └── SignUp.jsx
+│       ├── App.jsx
+│       ├── index.css
+│       └── main.jsx
+│
+├── .gitignore
+├── LICENSE
+├── README.md
+└── requirements.txt
 ```

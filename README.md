@@ -1,5 +1,5 @@
 # ConnectKingston
-Built for King Hacks 2026 — a platform that helps Kingston residents discover and match with local volunteer opportunities.
+Built for King Hacks 2026 | a platform that helps Kingston residents discover and match with local volunteer opportunities.
 
 ## Problem, Solution, and Intended Impact
 **Problem:** Volunteer opportunities in Kingston are scattered across many different websites and social channels, making them hard to find and overwhelming to navigate for those wanting to get involved. Existing centralized platforms are limited, meaning residents often miss opportunities that match their interests, availability, and skills.

@@ -114,46 +114,100 @@ export default function Favorites({ userId }) {
 
 // FavoriteCard component (same layout and styles as before)
 function FavoriteCard({ opp, onRemove }) {
+  const availability = opp?.raw?.availability || "Flexible";
+  const org = opp?.organization || "Unknown organization";
+  const title = opp?.title || "Untitled";
+  const desc = opp?.description || "";
+  const applyUrl = opp?.apply_url;
+
   return (
-    <div className="relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <button
-        type="button"
-        onClick={onRemove}
-        className="absolute right-4 top-4 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm
-                   shadow-sm hover:bg-slate-50 transition"
-        aria-label="Remove from favorites"
-        title="Remove from favorites"
-      >
-        <span className="text-yellow-400">★</span>
-      </button>
-
-      <h2 className="text-lg font-bold text-slate-900">{opp.title}</h2>
-      <p className="mt-1 text-sm text-slate-600">{opp.organization || opp.org}</p>
-
-      <p className="mt-3 text-sm text-slate-600 line-clamp-3">
-        {opp.description}
-      </p>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {(opp.tags || []).slice(0, 4).map((tag) => (
+    <div
+      className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm
+                 transition hover:-translate-y-1 hover:shadow-md
+                 flex h-full flex-col"
+    >
+      {/* TOP-RIGHT CONTROLS */}
+      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+        {/* Availability badge */}
+        <span className="relative group/badge">
           <span
-            key={tag}
-            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700"
+            className="
+              inline-flex h-9 w-9 items-center justify-center
+              rounded-full border border-slate-200 bg-white
+              shadow-sm transition
+              group-hover/badge:bg-slate-50
+            "
+            aria-hidden="true"
           >
-            {tag}
+            🗓️
           </span>
-        ))}
+          <span
+            className="
+              pointer-events-none absolute right-0 top-0 z-20
+              origin-top-right
+              rounded-2xl bg-white px-3 py-2
+              text-[11px] font-semibold text-indigo-700 leading-tight
+              shadow-md ring-1 ring-slate-200
+              opacity-0 scale-95 translate-y-1
+              transition duration-300 ease-out
+              group-hover/badge:opacity-100
+              group-hover/badge:scale-100
+              group-hover/badge:translate-y-0
+            "
+            style={{ width: "max-content", maxWidth: 240 }}
+          >
+            <span className="inline-flex items-start gap-2">
+              🗓️ <span className="whitespace-normal break-words">{availability}</span>
+            </span>
+          </span>
+        </span>
+
+        {/* Remove favorite button */}
+        <button
+          type="button"
+          onClick={onRemove}
+          className="
+            inline-flex h-9 w-9 items-center justify-center
+            rounded-full border border-slate-200 bg-white
+            shadow-sm transition
+            hover:bg-slate-50 active:scale-95
+          "
+          aria-label="Remove from favorites"
+          title="Remove from favorites"
+        >
+          <span className="text-red-500">❤️</span>
+        </button>
       </div>
 
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 pr-24">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+        </div>
+      </div>
+
+      {/* Description */}
+      <p className="mt-3 text-sm text-slate-600 flex-1">
+        <span className="line-clamp-3 sm:line-clamp-4">{desc}</span>
+      </p>
+
+      {/* Bottom row */}
       <div className="mt-5 flex items-center justify-between text-sm text-slate-600">
         <span className="inline-flex items-center gap-2">
-          <span className="text-slate-400">📍</span>
-          {opp.location_text || opp.location || "Unknown"}
+          <span className="text-slate-400">🏢</span>
+          {org}
         </span>
 
-        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-          {opp.commitment || "Flexible"}
-        </span>
+        {applyUrl && (
+          <a
+            href={applyUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-indigo-700 group-hover:text-indigo-600"
+          >
+            View ➜
+          </a>
+        )}
       </div>
     </div>
   );

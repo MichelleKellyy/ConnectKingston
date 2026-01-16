@@ -1,5 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import List
+from typing import List, Dict, Any
+from datetime import datetime
+from bson import ObjectId
+
 
 class Profile(BaseModel):
     full_name: str = Field(
@@ -29,3 +32,9 @@ class User(BaseModel):
     user_id: str = Field(..., description="Firebase UID")
     email: EmailStr = Field(..., description="User email")
     profile: Profile
+
+class Favorite(BaseModel):
+    user_id: str = Field(..., description="Firebase UID")
+    email: EmailStr = Field(..., description="User email")
+    opportunity_id: str=Field(..., description="opportunity email")
+    created_at: datetime | None = None

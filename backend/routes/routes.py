@@ -10,7 +10,7 @@ from utils.llm import match_with_llm_ids
 from bson import ObjectId
 import re
 from datetime import datetime
-
+import controller.favourites_controller as favops
 router = APIRouter()
 
 # ---------------- GET default message ----------------
@@ -72,7 +72,7 @@ def get_unmatched(limit: int = Query(50, ge=1, le=200)):
 
 
 @router.get("/match/{user_id}")
-async def get_matches(user_id: str):
+def get_matches(user_id: str):
     # ---------------- Fetch user ----------------
     user_doc = user_collection.find_one({"user_id": user_id})
     if not user_doc:
@@ -109,11 +109,10 @@ async def get_matches(user_id: str):
         print()
     print({'profile of user that is currently logged in!!':profile})
     print()
-    print()
 
 # ---------------- Ask LLM to select IDs ----------------
     try:
-        matched_ids, matched_ids_raw = await match_with_llm_ids(profile, opportunities)
+        matched_ids, matched_ids_raw =  match_with_llm_ids(profile, opportunities)
         #print("Raw LLM output:", matched_ids_raw)
         print(f"matched_ids: {matched_ids}")
         print()
@@ -144,39 +143,47 @@ async def get_matches(user_id: str):
         "matches": matched_opps
     }
 
-
 # Route to save a favorite
-@router.post("/add_favorites", response_model=dict)
-async def add_favorite(fav: Favorite):
+@router.post("/add_favorites")
+def add_favorite(fav: Favorite):
     try:
-        # Convert opportunity_id to ObjectId inside the function
-        doc = {
-            "email": fav.email,
-            "opportunity": ObjectId(fav.opportunity_id),
-            "user_id": fav.user_id,
-            "created_at": datetime.utcnow(),
-        }
-        await favourites_opportunities.update_one(
-            {"user_id": fav.user_id, "opportunity": ObjectId(fav.opportunity_id)},
-            {"$set": doc},
-            upsert=True
-        )
-        return {"status": "ok"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        opp_id = ObjectId(fav.opportunity_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid opportunity id")
 
+    # make sure the opportunity actually exists
+    if not opportunity_collection.find_one({"_id": opp_id}):
+        raise HTTPException(status_code=404, detail="Opportunity not found")
 
+    doc = {
+        "email": fav.email,
+        "user_id": fav.user_id,
+        "opportunity": opp_id,
+        "created_at": datetime.utcnow(),
+    }
+
+    favourites_opportunities.update_one(
+        {"user_id": fav.user_id, "opportunity": opp_id},
+        {"$set": doc},
+        upsert=True
+    )
+    return {"status": "ok"}
+
+    
 # Route to get all favorites for a user
-@router.get("/favorite/{user_id}", response_model=List[dict])
-async def get_favorites(user_id: str):
+@router.get("/favorites/{user_id}", response_model=List[dict])
+def get_favorites(user_id: str):
     try:
-        cursor = favourites_opportunities.find({"user_id": user_id})
-        favorites = []
-        async for doc in cursor:
-            favorites.append({
-                "opportunity": str(doc["opportunity"]),  # ObjectId -> string
-                "saved_at": doc["created_at"],
-            })
-        return favorites
+        return favops.get_user_favorites(user_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/getOpportunity/{opportunity_id}", response_model=dict)
+def getOppor(opportunity_id:str):
+    return favops.get_opportunity(opportunity_id)
+
+#Added delete so to remove favorite opportunities
+@router.delete("/remove_favorite")
+def remove_favorite(data: dict):
+    return favops.delete_opportunity_fav(data["user_id"], data["opportunity_id"])

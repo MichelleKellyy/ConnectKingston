@@ -6,6 +6,13 @@ import bg from "../assets/img2.jpg";
 import { auth } from "../firebase/firebase.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
+async function fetchFavorites(userId) {
+  const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/favorites/${userId}`);
+  if (!res.ok) throw new Error("Failed to fetch favorites");
+  const data = await res.json(); // now returns full opportunity objects with _id
+  return new Set(data.map(f => f._id)); // ✅ use f._id instead of f.opportunity
+}
+
 async function fetchOpportunities() {
   const res = await fetch(
     `${import.meta.env.VITE_BACKEND_URL}/opportunities/unmatched?limit=${50}`
@@ -14,22 +21,6 @@ async function fetchOpportunities() {
   const data = await res.json();
   return data.items;
 }
-
-function loadFavorites() {
-  try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return new Set(Array.isArray(parsed) ? parsed : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function saveFavorites(favSet) {
-  localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favSet]));
-}
-
-
 
 export default function Feed() {
   const [opportunities, setOpportunities] = useState([]);
@@ -45,27 +36,34 @@ export default function Feed() {
   const [matching, setMatching] = useState(false);
 
   useEffect(() => {
+    if (!user) return; // wait for user login
     let ignore = false;
 
-    async function load() {
+    async function loadData() {
       setLoading(true);
       setError("");
 
       try {
-        const data = await fetchOpportunities();
-        if (!ignore) setOpportunities(Array.isArray(data) ? data : []);
+        const opps = await fetchOpportunities();
+        const favSet = await fetchFavorites(user.uid);
+
+        if (!ignore) {
+          setOpportunities(opps);
+          setFavorites(favSet);
+        }
+
       } catch (err) {
         if (!ignore) setError(err?.message || "Something went wrong.");
+        console.error(err);
       } finally {
         if (!ignore) setLoading(false);
       }
     }
 
-    load();
-    return () => {
-      ignore = true;
-    };
-  }, []);
+    loadData();
+    return () => { ignore = true; }
+  }, [user]);
+
 
   async function fetchMatches(userId) {
     setMatching(true);
@@ -74,10 +72,9 @@ export default function Feed() {
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      const data = await res.json(); // data is your backend JSON
+      const data = await res.json();
       console.log("Match response:", data);
 
-      // If your backend returns `matches` array
       setMatchedIds(data.matches || []);
 
     } catch (e) {
@@ -126,15 +123,52 @@ export default function Feed() {
     });
   }, [baseList, query]);
 
-  function toggleFavorite(id) {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      saveFavorites(next);
-      return next;
-    });
+  async function toggleFavorite(id, isCurrentlyFavorited) {
+    if (!user) {
+      alert("Please log in to save favorites!");
+      return;
+    }
+
+    if (!isCurrentlyFavorited) {
+      // Add favorite to backend
+      try {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/add_favorites`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: user.uid,
+            opportunity_id: id,
+            email: user.email
+          }),
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        console.log("Favorite saved!", await res.json());
+
+        // ✅ Return a new Set for React
+        setFavorites(prev => new Set([...prev, id]));
+
+      } catch (err) {
+        console.error("Saving favorite failed:", err);
+      }
+    } else {
+      // Remove favorite from backend if implemented
+      try {
+        // Optional: call backend remove route here
+        // await fetch(`${import.meta.env.VITE_BACKEND_URL}/remove_favorite`, { ... })
+
+        setFavorites(prev => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next; // return new Set
+        });
+        console.log("Removed favorite locally. Backend remove not implemented yet.");
+      } catch (err) {
+        console.error("Removing favorite failed:", err);
+      }
+    }
   }
+
 
   return (
     // BACKGROUND IMAGE (fixed)
@@ -251,11 +285,10 @@ export default function Feed() {
                     key={id}
                     opp={opp}
                     isFavorited={favorites.has(id)}
-                    onToggleFavorite={() => toggleFavorite(id)}
-                    onClick={() => {
-                      console.log("Clicked opportunity", id);
-                    }}
+                    onToggleFavorite={() => toggleFavorite(id, favorites.has(id))}
+                    onClick={() => console.log("Clicked opportunity", id)}
                   />
+
                 );
               })}
             </div>

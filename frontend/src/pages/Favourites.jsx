@@ -1,104 +1,66 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Nav from "../components/Nav";
 import bg from "../assets/img2.jpg";
 
-const MOCK_OPPORTUNITIES = [
-  {
-    id: "1",
-    title: "Community Cleanup Volunteer",
-    org: "Kingston Green Team",
-    location: "Downtown Kingston",
-    commitment: "2–4 hrs/week",
-    tags: ["Environment", "Outdoors", "Community"],
-    description:
-      "Help keep Kingston beautiful by joining weekend cleanups and community events.",
-  },
-  {
-    id: "2",
-    title: "Food Bank Sorting Helper",
-    org: "Kingston Food Bank",
-    location: "East End",
-    commitment: "1–2 hrs/week",
-    tags: ["Food", "Community", "Support"],
-    description:
-      "Assist with sorting donations and preparing food hampers for local families.",
-  },
-  {
-    id: "3",
-    title: "Youth Coding Mentor",
-    org: "Tech for Youth",
-    location: "Hybrid",
-    commitment: "5–10 hrs/month",
-    tags: ["Youth", "Tech", "Mentorship"],
-    description:
-      "Mentor students during coding club sessions. Beginners welcome—training provided.",
-  },
-  {
-    id: "4",
-    title: "Event Support Volunteer",
-    org: "Kingston Arts Council",
-    location: "City Hall",
-    commitment: "One-time / flexible",
-    tags: ["Events", "Arts", "Community"],
-    description:
-      "Help with check-in, guiding attendees, and setup/teardown at local events.",
-  },
-];
-
-async function fetchOpportunities() {
-  await new Promise((r) => setTimeout(r, 200));
-  return MOCK_OPPORTUNITIES;
+// Fetch all favorite opportunities (backend now returns full objects)
+async function fetchLikedOpportunities(userId) {
+  const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/favorites/${userId}`);
+  if (!res.ok) throw new Error("Failed to fetch favorites");
+  return res.json(); // Backend returns full opportunity objects directly
 }
 
+// Remove favorite from backend
+async function removeFavoriteBackend(userId, opportunityId) {
+  const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/remove_favorite`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, opportunity_id: opportunityId }),
+  });
+  if (!res.ok) throw new Error("Failed to remove favorite");
+  return res.json();
+}
 
-export default function Favorites() {
+export default function Favorites({ userId }) {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [favorites, setFavorites] = useState(new Set());
-
   useEffect(() => {
     let ignore = false;
 
-    async function load() {
+    async function loadFavorites() {
       setLoading(true);
       setError("");
       try {
-        const data = await fetchOpportunities();
-        if (!ignore) setOpportunities(Array.isArray(data) ? data : []);
+        const opps = await fetchLikedOpportunities(userId);
+        if (!ignore) setOpportunities(opps);
       } catch (err) {
-        if (!ignore) setError(err?.message || "Something went wrong.");
+        if (!ignore) setError(err.message || "Something went wrong.");
       } finally {
         if (!ignore) setLoading(false);
       }
     }
 
-    load();
-    return () => {
-      ignore = true;
-    };
-  }, []);
+    loadFavorites();
+    return () => { ignore = true; };
+  }, [userId]);
 
-  const favoritedOpps = useMemo(() => {
-    return opportunities.filter((o) => favorites.has(o.id));
-  }, [opportunities, favorites]);
-
-  function removeFavorite(id) {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
+  // Remove favorite (UI + backend)
+  async function removeFavorite(id) {
+    try {
+      await removeFavoriteBackend(userId, id);
+      setOpportunities((prev) => prev.filter((o) => o._id !== id));
+    } catch (err) {
+      console.error("Failed to remove favorite:", err);
+      alert("Failed to remove favorite. Please try again.");
+    }
   }
 
   return (
-    // background image wrapper
     <div
       className="min-h-screen bg-fixed bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${bg})` }}
     >
-      {/* overlay layer */}
       <div className="min-h-screen bg-slate-100/80 backdrop-blur-sm text-slate-900">
         <Nav />
 
@@ -119,12 +81,12 @@ export default function Favorites() {
 
           {!loading && error && (
             <div className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700">
-              <p className="font-semibold">Couldn’t load favorites</p>
+              <p className="font-semibold">Couldn't load favorites</p>
               <p className="mt-1 text-sm">{error}</p>
             </div>
           )}
 
-          {!loading && !error && favoritedOpps.length === 0 && (
+          {!loading && !error && opportunities.length === 0 && (
             <div className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
               <p className="font-semibold text-slate-900">No favorites yet</p>
               <p className="mt-1 text-sm text-slate-600">
@@ -133,13 +95,13 @@ export default function Favorites() {
             </div>
           )}
 
-          {!loading && !error && favoritedOpps.length > 0 && (
+          {!loading && !error && opportunities.length > 0 && (
             <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {favoritedOpps.map((opp) => (
+              {opportunities.map((opp) => (
                 <FavoriteCard
-                  key={opp.id}
+                  key={opp._id}
                   opp={opp}
-                  onRemove={() => removeFavorite(opp.id)}
+                  onRemove={() => removeFavorite(opp._id)}
                 />
               ))}
             </div>
@@ -150,47 +112,102 @@ export default function Favorites() {
   );
 }
 
+// FavoriteCard component (same layout and styles as before)
 function FavoriteCard({ opp, onRemove }) {
+  const availability = opp?.raw?.availability || "Flexible";
+  const org = opp?.organization || "Unknown organization";
+  const title = opp?.title || "Untitled";
+  const desc = opp?.description || "";
+  const applyUrl = opp?.apply_url;
+
   return (
-    <div className="relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <button
-        type="button"
-        onClick={onRemove}
-        className="absolute right-4 top-4 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm
-                   shadow-sm hover:bg-slate-50 transition"
-        aria-label="Remove from favorites"
-        title="Remove from favorites"
-      >
-        <span className="text-yellow-400">★</span>
-      </button>
-
-      <h2 className="text-lg font-bold text-slate-900">{opp.title}</h2>
-      <p className="mt-1 text-sm text-slate-600">{opp.org}</p>
-
-      <p className="mt-3 text-sm text-slate-600 line-clamp-3">
-        {opp.description}
-      </p>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {(opp.tags || []).slice(0, 4).map((tag) => (
+    <div
+      className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm
+                 transition hover:-translate-y-1 hover:shadow-md
+                 flex h-full flex-col"
+    >
+      {/* TOP-RIGHT CONTROLS */}
+      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+        {/* Availability badge */}
+        <span className="relative group/badge">
           <span
-            key={tag}
-            className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700"
+            className="
+              inline-flex h-9 w-9 items-center justify-center
+              rounded-full border border-slate-200 bg-white
+              shadow-sm transition
+              group-hover/badge:bg-slate-50
+            "
+            aria-hidden="true"
           >
-            {tag}
+            🗓️
           </span>
-        ))}
+          <span
+            className="
+              pointer-events-none absolute right-0 top-0 z-20
+              origin-top-right
+              rounded-2xl bg-white px-3 py-2
+              text-[11px] font-semibold text-indigo-700 leading-tight
+              shadow-md ring-1 ring-slate-200
+              opacity-0 scale-95 translate-y-1
+              transition duration-300 ease-out
+              group-hover/badge:opacity-100
+              group-hover/badge:scale-100
+              group-hover/badge:translate-y-0
+            "
+            style={{ width: "max-content", maxWidth: 240 }}
+          >
+            <span className="inline-flex items-start gap-2">
+              🗓️ <span className="whitespace-normal break-words">{availability}</span>
+            </span>
+          </span>
+        </span>
+
+        {/* Remove favorite button */}
+        <button
+          type="button"
+          onClick={onRemove}
+          className="
+            inline-flex h-9 w-9 items-center justify-center
+            rounded-full border border-slate-200 bg-white
+            shadow-sm transition
+            hover:bg-slate-50 active:scale-95
+          "
+          aria-label="Remove from favorites"
+          title="Remove from favorites"
+        >
+          <span className="text-red-500">❤️</span>
+        </button>
       </div>
 
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 pr-24">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+        </div>
+      </div>
+
+      {/* Description */}
+      <p className="mt-3 text-sm text-slate-600 flex-1">
+        <span className="line-clamp-3 sm:line-clamp-4">{desc}</span>
+      </p>
+
+      {/* Bottom row */}
       <div className="mt-5 flex items-center justify-between text-sm text-slate-600">
         <span className="inline-flex items-center gap-2">
-          <span className="text-slate-400">📍</span>
-          {opp.location || "Unknown"}
+          <span className="text-slate-400">🏢</span>
+          {org}
         </span>
 
-        <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-          {opp.commitment || "Flexible"}
-        </span>
+        {applyUrl && (
+          <a
+            href={applyUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-indigo-700 group-hover:text-indigo-600"
+          >
+            View ➜
+          </a>
+        )}
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ from scrapers.registry import list_sources
 from database.opportunity import list_opportunities
 from utils.llm import match_with_llm_ids
 from bson import ObjectId
-
+import re
 router = APIRouter()
 
 # ---------------- GET default message ----------------
@@ -57,6 +57,8 @@ def ingest_one(source: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 # ===================== OPPORTUNITY FEED =====================
+def strip_html(text):
+    return re.sub(r"<[^>]+>", "", text or "").strip()
 
 @router.get("/opportunities/unmatched")
 def get_unmatched(limit: int = Query(50, ge=1, le=200)):
@@ -82,21 +84,37 @@ async def get_matches(user_id: str):
     # ---------------- Prepare opportunities for LLM ----------------
     opportunities = []
     for opp in opps_doc:
-        parsed = opp.get("parsed", {})
+        parsed = opp.get("parsed") or {}
+        raw = opp.get("raw") or {}
+
         opportunities.append({
-            "_id": str(opp["_id"]),  # LLM sees _id as string
-            "title": parsed.get("title", "No title"),
-            "description": parsed.get("description", "No description provided"),
-            "location": opp.get("location_text", "Unknown"),
-            "cause": opp.get("organization", "Unknown"),
-            "availability": parsed.get("availability", "Not specified")
+        "_id": str(opp["_id"]),
+        
+        "title": opp.get("title") # top-level title (best)
+        or parsed.get("title")          # raw.parsed.title
+        or strip_html(raw.get("card_title_html"))
+        or "No title",
+        
+        "description": parsed.get("description") or opp.get("description") or "No description provided",
+        "location": opp.get("location_text", "Unknown"),
+        "cause": opp.get("organization", "Unknown"),
+        "availability":  parsed.get("availability")     # raw.parsed.availability (best)
+        or raw.get("availability")     # raw.availability fallback
+        or opp.get("availability")     # in case some docs store it top-level
+        or "Not specified",
         })
+        print()
+    print({'profile of user that is currently logged in!!':profile})
+    print()
+    print()
 
 # ---------------- Ask LLM to select IDs ----------------
     try:
         matched_ids, matched_ids_raw = await match_with_llm_ids(profile, opportunities)
         #print("Raw LLM output:", matched_ids_raw)
-
+        print(f"matched_ids: {matched_ids}")
+        print()
+        print(f"matched_ids_raws: {matched_ids_raw}")
         if not isinstance(matched_ids, list):
             return {"error": "LLM did not return a list of IDs", "raw": matched_ids_raw}
 
@@ -110,13 +128,15 @@ async def get_matches(user_id: str):
         try:
             opp_obj = opportunity_collection.find_one({"_id": ObjectId(_id)})
             if opp_obj:
+                opp_obj["_id"] = str(opp_obj["_id"])
                 matched_opps.append(opp_obj)
         except Exception:
             continue  # skip invalid _id
-
+    print({"lenght of match_opps":len(matched_opps)})
+    print()
 # ---------------- Return result ----------------
     return {
         "user_id": user_id,
         "raw_llm_output": matched_ids_raw,  # keep the raw output for storage/debugging
-        "matches": str(matched_opps)
+        "matches": matched_opps
     }

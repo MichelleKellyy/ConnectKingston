@@ -4,7 +4,7 @@ import bg from "../assets/img2.jpg";
 
 // Fetch favorite IDs for a user
 async function fetchFavoriteIds(userId) {
-  const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/favorite/${userId}`);
+  const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/favorites/${userId}`);
   if (!res.ok) throw new Error("Failed to fetch favorites");
   return res.json(); // [{ opportunity: "id", saved_at: ... }]
 }
@@ -12,17 +12,32 @@ async function fetchFavoriteIds(userId) {
 // Fetch full opportunity details by ID
 async function fetchOpportunityById(id) {
   const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/getOpportunity/${id}`);
+  console.log("Fetching opportunity ID:", id, res.status);
   if (!res.ok) throw new Error("Failed to fetch opportunity");
   return res.json();
 }
 
+
 // Fetch all liked opportunities
 async function fetchLikedOpportunities(userId) {
   const favIds = await fetchFavoriteIds(userId);
+  console.log("Fetched favorites IDs:", favIds); // DEBUG
   const opps = await Promise.all(
-    favIds.map((fav) => fetchOpportunityById(fav.opportunity))
+    favIds.map((fav) => fetchOpportunityById(fav.opportunity)) // backend must return {opportunity: "id"}
   );
   return opps;
+}
+
+
+// Remove favorite from backend
+async function removeFavoriteBackend(userId, opportunityId) {
+  const res = await fetch(`${import.meta.env.VITE_BACKEND_URL}/remove_favorite`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, opportunity_id: opportunityId }),
+  });
+  if (!res.ok) throw new Error("Failed to remove favorite");
+  return res.json();
 }
 
 export default function Favorites({ userId }) {
@@ -50,9 +65,15 @@ export default function Favorites({ userId }) {
     return () => { ignore = true; };
   }, [userId]);
 
-  // Remove a favorite dynamically
-  function removeFavorite(id) {
-    setOpportunities((prev) => prev.filter((o) => o._id !== id));
+  // Remove favorite (UI + backend)
+  async function removeFavorite(id) {
+    try {
+      await removeFavoriteBackend(userId, id);
+      setOpportunities((prev) => prev.filter((o) => o._id !== id));
+    } catch (err) {
+      console.error("Failed to remove favorite:", err);
+      alert("Failed to remove favorite. Please try again.");
+    }
   }
 
   return (
@@ -127,7 +148,7 @@ function FavoriteCard({ opp, onRemove }) {
       </button>
 
       <h2 className="text-lg font-bold text-slate-900">{opp.title}</h2>
-      <p className="mt-1 text-sm text-slate-600">{opp.org}</p>
+      <p className="mt-1 text-sm text-slate-600">{opp.organization || opp.org}</p>
 
       <p className="mt-3 text-sm text-slate-600 line-clamp-3">
         {opp.description}

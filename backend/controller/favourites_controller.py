@@ -22,10 +22,11 @@ def get_user_favorites(user_id: str):
     favorites = []
     for doc in cursor:
         favorites.append({
-            "opportunity_id": str(doc["opportunity_id"]),  # convert ObjectId to string
+            "opportunity": str(doc["opportunity"]),  # match frontend expectation
             "saved_at": doc["created_at"],
         })
     return favorites
+
 
 def get_opportunity(opportunity_id: str):
     try:
@@ -47,13 +48,11 @@ def get_opportunity(opportunity_id: str):
 
     return opp
 
-def delete_opportunity_fav(opportunity_id: str):
-    if not ObjectId.is_valid(opportunity_id):
-        raise HTTPException(status_code=400, detail="Invalid opportunity ID")
-
-    result = favourites_opportunities.delete_one({"_id": ObjectId(opportunity_id)})
-
+def delete_opportunity_fav(user_id: str, opportunity_id: str):
+    result = favourites_opportunities.delete_one({
+        "user_id": user_id,
+        "opportunity": ObjectId(opportunity_id)
+    })
     if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Opportunity not found")
-
-    return {"status": "success", "message": f"Opportunity {opportunity_id} deleted"}
+        raise HTTPException(status_code=404, detail="Favorite not found")
+    return {"status": "success", "message": "Favorite removed"}
